@@ -27,4 +27,24 @@ date_format = "Jan 2006"
   date_start = "2017-01-01"
   date_end = "2017-12-31"
   description = ""
+  
+[[item]]
+  organization = "California State University, Long Beach"
+  organization_url = "http://www.csulb.edu/"
+  title = "Graduate Dean's List Award, College of Engineering (2015-2016)"
+  url = ""
+  certificate_url = ""
+  date_start = "2016-05-01"
+  date_end = "2016-05-01"
+  description = ""
+  
+[[item]]
+  organization = "California State University, Long Beach"
+  organization_url = "http://www.csulb.edu/"
+  title = "Outstanding Thesis Award, Aerospace Engineering (2015-2016)"
+  url = ""
+  certificate_url = ""
+  date_start = "2016-05-01"
+  date_end = "2016-05-01"
+  description = ""
 +++

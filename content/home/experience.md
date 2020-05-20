@@ -46,6 +46,9 @@ date_format = "Jan 2006"
   location = "Santa Fe Springs, CA"
   date_start = "2014-09-01"
   date_end = "2016-02-01"
-  description = """Taught electronic engineering and researched semiconductor physics."""
+  description = """
+  * Designed custom process material kits to reduce customer layup time in composites manufacturing.
+  * Created and managed database of customer specifications and associated products.
+  """
 
 +++
