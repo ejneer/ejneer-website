@@ -14,7 +14,7 @@ email: "ericjneer@gmail.com"
 interests:
 - Manufacturing
 - Statistics
-- Software Engineering
+- Software Engineering with R and Python
 organizations:
 - name: Stanley Black & Decker
   url: ""
@@ -42,5 +42,6 @@ user_groups:
 - Researchers
 - Visitors
 ---
-
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed neque elit, tristique placerat feugiat ac, facilisis vitae arcu. Proin eget egestas augue. Praesent ut sem nec arcu pellentesque aliquet. Duis dapibus diam vel metus tempus vulputate.
+Experienced aerospace and manufacturing engineer with an interest in the application of statistics and software engineering to these fields.
+Enjoys developing in R and Python.
+Holds a DoD Secret clearance and a Masters degree in Aerospace Engineering. 
