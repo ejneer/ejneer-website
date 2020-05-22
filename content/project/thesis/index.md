@@ -2,7 +2,7 @@
 date: "2016-12-01"
 external_link: ""
 image:
-  caption: Carbon Nanotubes Dispersed in a Polymer Resin
+  caption: Multi-wall carbon nanotubes in a polystyrene film.
   focal_point: Smart
 slides: example
 summary: Published works relating to my Master's Thesis.
@@ -14,3 +14,5 @@ url_video: ""
 tags:
 - Thesis
 ---
+
+**Photo Credit:** Qian, D., Dickey, E. C., Andrews, R., and Rantell, T., 2000.  “Load transfer and deformation mechanisms in carbon nanotube-polystyrene composites”. Applied physics letters,76(20), pp. 2868–2870
