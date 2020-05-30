@@ -5,6 +5,22 @@ date: "5/27/2020"
 output: html_document
 draft: true
 ---
+```{r}
+library(DiagrammeR)
+library(reticulate)
+library(ggplot2)
+library(gganimate)
+```
+```{r}
+node_declaration_template <- "{prefix}{node_num} [label={node_num}]"
+grViz("
+    digraph{
+        A2 [label=2]
+        rankdir=LR;
+        2 -> 8 -> 7 -> 1 -> 3 -> 5 -> 6 -> 4  [style='invis']
+    }
+")
+```
 
 ```{python}
 def quick_sort(array, low_idx, high_idx):
@@ -28,10 +44,10 @@ def partition(array, low_idx, high_idx):
     >>> partition([2, 8, 7, 1, 3, 5, 6, 4], 0, 7)
     ([2, 1, 3, 4, 7, 5, 6, 8], 3)
     """
-    i = -1
+    i = low_idx - 1
     pivot = array[high_idx]
-    for j, item in enumerate(array):
-        if item <= pivot and j < len(array) - 1:
+    for j in range(low_idx, high_idx):
+        if array[j] <= pivot:
             i += 1
             swap(array, i, j)
     swap(array, i + 1, high_idx)
@@ -49,4 +65,61 @@ def swap(array, first_idx, second_idx):
     array[first_idx], array[second_idx] = array[second_idx], array[first_idx]
     return array
 ```
+
+```{python}
+import pandas as pd
+
+class QuickSorter(object):
+    def __init__(self, data):
+        self._data = data
+        self._snapshots = []
+        self._sorted = False
+        for idx, value in enumerate(self._data):
+            self._snapshots.append(
+                {
+                    "position": idx,
+                    "value": value,
+                    "iteration": 0,
+                }
+            )
+        self._iteration_count = 1
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, new_data):
+        """
+        Ensures a "sorted" state is invalidated on data change.
+        """
+        self._data = new_data
+        self.sorted = False
+
+    @property
+    def snapshots(self):
+        return pd.DataFrame.from_records(self._snapshots)
+
+    def quick_sort(self, low_idx, high_idx):
+        if low_idx < high_idx:
+            _, pivot_idx = partition(self.data, low_idx, high_idx)
+            self.quick_sort(low_idx, pivot_idx - 1)
+            self.quick_sort(pivot_idx + 1, high_idx)
+            self._snapshot()
+
+    def _snapshot(self):
+        """
+        Copy self.data, indicating if each element is currently being sorted.
+        """
+        for idx, value in enumerate(self._data):
+            self._snapshots.append(
+                {
+                    "position": idx,
+                    "value": value,
+                    "iteration": self._iteration_count,
+                }
+            )
+        self._iteration_count += 1
+```
+
 
