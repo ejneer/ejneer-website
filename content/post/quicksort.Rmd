@@ -1,27 +1,26 @@
 ---
-title: "quicksort"
+title: "Quicksort"
+subtitle: 'Visualizing Algorithms with R and Python'
+summary: "Detailing the quicksort algorithm."
 author: "Eric Neer"
-date: "5/27/2020"
-output: html_document
+output: 
+  html_document:
+    toc: true
+date: 2020-05-31
+categories: ["R", "Python", "Algovis"]
+tags: ["algorithms", "visualizations"]
+projects: ["algovis"]
 draft: true
 ---
-```{r}
+```{r setup, include=FALSE}
 library(DiagrammeR)
 library(reticulate)
 library(ggplot2)
 library(gganimate)
 ```
-```{r}
-node_declaration_template <- "{prefix}{node_num} [label={node_num}]"
-grViz("
-    digraph{
-        A2 [label=2]
-        rankdir=LR;
-        2 -> 8 -> 7 -> 1 -> 3 -> 5 -> 6 -> 4  [style='invis']
-    }
-")
-```
 
+### Description
+Quicksort, like mergesort, is another divide and conquer sorting technique.
 ```{python}
 def quick_sort(array, low_idx, high_idx):
     """
@@ -66,10 +65,25 @@ def swap(array, first_idx, second_idx):
     return array
 ```
 
-```{python}
+```{python, include=FALSE}
 import pandas as pd
 
+def swap(array, first_idx, second_idx):
+    """
+    Swap two elements in an array.
+
+    >>> swap([13, 31], 0, 1)
+    [31, 13]
+    """
+    array[first_idx], array[second_idx] = array[second_idx], array[first_idx]
+    return array
+
+
 class QuickSorter(object):
+    STATUS_NONE = "none"
+    STATUS_SORTING = "sorting"
+    STATUS_PIVOT = "pivot"
+
     def __init__(self, data):
         self._data = data
         self._snapshots = []
@@ -80,6 +94,8 @@ class QuickSorter(object):
                     "position": idx,
                     "value": value,
                     "iteration": 0,
+                    "status": QuickSorter.STATUS_NONE,
+                    "pivot": 0
                 }
             )
         self._iteration_count = 1
@@ -102,12 +118,23 @@ class QuickSorter(object):
 
     def quick_sort(self, low_idx, high_idx):
         if low_idx < high_idx:
-            _, pivot_idx = partition(self.data, low_idx, high_idx)
+            _, pivot_idx = self.partition(low_idx, high_idx)
+            self._snapshot(low_idx, high_idx, pivot_idx)
             self.quick_sort(low_idx, pivot_idx - 1)
             self.quick_sort(pivot_idx + 1, high_idx)
-            self._snapshot()
 
-    def _snapshot(self):
+    def partition(self, low_idx, high_idx):
+        i = low_idx - 1
+        pivot = self.data[high_idx]
+        for j in range(low_idx, high_idx):
+            if self.data[j] <= pivot:
+                i += 1
+                swap(self.data, i, j)
+        swap(self.data, i + 1, high_idx)
+        pivot_idx = i + 1
+        return self.data, pivot_idx
+
+    def _snapshot(self, low_idx, high_idx, pivot_idx):
         """
         Copy self.data, indicating if each element is currently being sorted.
         """
@@ -117,9 +144,30 @@ class QuickSorter(object):
                     "position": idx,
                     "value": value,
                     "iteration": self._iteration_count,
+                    "status": QuickSorter.STATUS_PIVOT
+                    if idx == pivot_idx
+                    else QuickSorter.STATUS_SORTING
+                    if idx in range(low_idx, high_idx + 1)
+                    else QuickSorter.STATUS_NONE,
+                    "pivot": self.data[pivot_idx]
                 }
             )
         self._iteration_count += 1
 ```
 
+```{r echo=FALSE}
+data <- py$QuickSorter(runif(30))
+data$quick_sort(0L, 29L)
+anim <- data$snapshots %>% 
+    ggplot(.) + 
+    aes(x = position, y = value, fill = status) + 
+    geom_col() + 
+    geom_hline(aes(yintercept=pivot)) +
+    transition_manual(iteration) +
+    theme_void() +
+    theme(legend.position = "none") +
+    ggtitle('Mergesort - Iteration #{current_frame}')
+    
+animate(anim, renderer = gifski_renderer(), fps = 2.5, end_pause = 5)
+```
 
