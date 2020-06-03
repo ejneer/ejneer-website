@@ -21,6 +21,77 @@ library(gganimate)
 
 ### Description
 Quicksort, like mergesort, is another divide and conquer sorting technique.
+The general strategy of quicksort is as follows:
+
+1. Given an array, choose an element to act as the "pivot" which will be used to partition the array.
+1. Separate the array in two, forming a group of elements smaller than the pivot and a group larger than the pivot.
+1. Recursively partition these two groups.
+
+```{r}
+grViz("
+  digraph {
+    rankdir='TB'
+    node[style='filled', shape='plaintext']
+    Q U I C K S O R T
+    
+    node[style='', shape='plaintext']
+    
+    QUICKSORT [label=<QUICKSOR<u>T</u>>]
+    QICKSOR [label=<QICKSO<u>R</u>>]
+    
+    QICKO [label=<QICK<u>O</u>>]
+    ICK [label=<IC<u>K</u>>]
+    
+    IC [label=<I<u>C</u>>]
+    
+    QUICKSORT -> {QICKSOR T U}
+    QICKSOR -> {QICKO R S}
+    QICKO -> {ICK O Q}
+    
+    ICK -> {IC K}
+    
+    IC -> {I C}
+    
+    
+    subgraph {
+      rankdir='LR'
+      edge[style='invis']
+      rank='same'
+      QICKSOR -> T -> U
+    }
+    
+    subgraph {
+      rankdir='LR'
+      edge[style='invis']
+      rank='same'
+      QICKO -> R -> S
+    }
+    
+    subgraph {
+      rankdir='LR'
+      edge[style='invis']
+      rank='same'
+      ICK -> O -> Q
+    }
+    
+    subgraph {
+      rankdir='LR'
+      edge[style='invis']
+      rank='same'
+      IC -> K
+    }
+    
+    subgraph {
+      rankdir='LR'
+      edge[style='invis']
+      rank='same'
+      C -> I
+    }
+  } 
+")
+```
+
+
 ```{python}
 def quick_sort(array, low_idx, high_idx):
     """
@@ -163,6 +234,7 @@ anim <- data$snapshots %>%
     aes(x = position, y = value, fill = status) + 
     geom_col() + 
     geom_hline(aes(yintercept=pivot)) +
+    scale_fill_manual(values=c("#d0d3d4", "#27ae60", "#3498db")) +
     transition_manual(iteration) +
     theme_void() +
     theme(legend.position = "none") +
