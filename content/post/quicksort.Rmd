@@ -16,6 +16,8 @@ library(DiagrammeR)
 library(reticulate)
 library(ggplot2)
 library(gganimate)
+
+set.seed(0)
 ```
 
 <div align="center">
