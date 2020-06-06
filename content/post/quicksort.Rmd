@@ -6,11 +6,10 @@ author: "Eric Neer"
 output: 
   html_document:
     toc: true
-date: 2020-05-31
+date: 2020-06-05
 categories: ["R", "Python", "Algovis"]
 tags: ["algorithms", "visualizations"]
 projects: ["algovis"]
-draft: true
 ---
 ```{r setup, include=FALSE}
 library(DiagrammeR)
@@ -252,6 +251,7 @@ This function selects the last element of the given (sub-)array as the pivot and
 If an encountered value is less than the pivot, it is swapped to the end of the left side (i.e. values less than the pivot) of the values being partitioned. 
 Two indices are involved, one to iterate over the array, and the other to keep track of the last value encountered that is less than the pivot, used in swapping.
 
+
 ```{python partition}
 def partition(array, low_idx, high_idx):
     """
@@ -270,3 +270,14 @@ def partition(array, low_idx, high_idx):
     pivot_idx = i + 1
     return array, pivot_idx
 ```
+
+### Complexity
+
+Choosing a partition has been glossed over thus far, but plays a central role in the performance of quicksort.
+As presented here, the pivot is always assumed to be the last element of the array under investigation.
+There exist many variations on this, including assuming the first, middle, or taking a random element as a pivot.
+
+Worst case performance occurs when the chosen pivot results in one empty and one size $(n - 1)$ array after partitioning.
+This would result in $O(n^2)$ behavior.
+Conversely, the best case is when partitioning results in two balanced arrays yielding $O(n \ln{n})$ performance.
+In reality, the *average* expected performance tends more toward the best case.
