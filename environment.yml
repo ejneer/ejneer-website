@@ -1,0 +1,27 @@
+name: null
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - certifi=2020.4.5.1=py36h9f0ad1d_0
+  - intel-openmp=2020.0=166
+  - libblas=3.8.0=15_mkl
+  - libcblas=3.8.0=15_mkl
+  - liblapack=3.8.0=15_mkl
+  - mkl=2020.0=166
+  - numpy=1.18.4=py36h4d86e3b_0
+  - pandas=1.0.4=py36hcc50265_0
+  - pip=20.0.2=py36_3
+  - python=3.6.10=he025d50_1009_cpython
+  - python-dateutil=2.8.1=py_0
+  - python_abi=3.6=1_cp36m
+  - pytz=2020.1=pyh9f0ad1d_0
+  - setuptools=46.4.0=py36_0
+  - six=1.15.0=pyh9f0ad1d_0
+  - sqlite=3.31.1=h2a8f88b_1
+  - vc=14.1=h0510ff6_4
+  - vs2015_runtime=14.16.27012=hf0eaf9b_2
+  - wheel=0.34.2=py36_0
+  - wincertstore=0.2=py36h7fe50ca_0
+  - zlib=1.2.11=h62dcd97_4
+prefix: C:\Users\EricJ\Documents\ejneer-website\renv\python\condaenvs\renv-python
