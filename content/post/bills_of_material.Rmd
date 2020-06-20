@@ -6,7 +6,7 @@ author: "Eric Neer"
 output: 
   html_document:
     toc: true
-date: 2020-06-01
+date: 2020-00-00
 categories: []
 tags: []
 projects: []
@@ -30,7 +30,7 @@ library(RSQLite)
 ```
 
 ### Description
-In manufacturing, a bill of materials defines all of the items required to produce a good.
+In manufacturing, a bill of materials (BOM) defines all of the items required to produce a good.
 Often times this consists of raw materials (e.g. steel, aluminum) that are transformed or other components that are assembled to make the finished product.
 It may also contain ancillary items used during manufacturing, such as tooling or consumable chemicals.
 
@@ -49,6 +49,7 @@ grViz("
     LP -> {Inner Point Outer}
     Inner -> T1
     Outer -> T2
+
     UB -> {Sleeve Clip}
     Sleeve -> {Top Tube}
     Tube -> Tubing
@@ -71,9 +72,33 @@ grViz("
 <figcaption>Hypothetical multi-level bill of materials for a pen. [@lunn1992]</figcaption>
 </div>
 
-
 ### Data Structure
 + Adjacency lists
 + Graphs
+
+Looking at the bill of materials depiction above, it is obvious that a BOM is really just a tree whose nodes are components (or subassemblies) and edges indicate a component's belonging to its parent's BOM.
+The quantity of a component in a parent's BOM would also be indicated by an edge, as it is a property of the relationship between the parent and component.
+Most MRP systems persist data using a typical relational database which stores information in a tabular fashion.
+Thus, the information encoded in the BOM tree structure must be transformed to fit within a table structure.
+This is typically done using an [adjacency list](https://en.wikipedia.org/wiki/Adjacency_list) which may be easily encoded as a table, with 1 row per relationship.
+The table below represents the first two levels of the pen bill of materials taken from [@lunn1992] as it may appear in a database.
+
+| Component    | Parent       | Quantity | Level |
+|--------------|--------------|----------|-------|
+| Pen          | NULL         | NULL     | 0     |
+| Lower Pen    | Pen          | 1        | 1     |
+| Upper Barrel | Pen          | 1        | 1     |
+| Ink          | Pen          | 1        | 1     |
+| Inner        | Lower Pen    | 1        | 2     |
+| Point        | Lower Pen    | 1        | 2     |
+| Outer        | Lower Pen    | 1        | 2     |
+| Sleeve       | Upper Barrel | 1        | 2     |
+| Clip         | Upper Barrel | 1        | 2     |
+
+
+### Applications
++ find all components of a bom and accumulate quantities
+  + sql recursive cte
+  + in memory dfs
 
 ### References
