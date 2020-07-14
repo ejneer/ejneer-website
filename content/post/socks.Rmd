@@ -1,0 +1,24 @@
+---
+title: "Matching Socks"
+summary: "Exploring an algorithm for matching socks."
+author: "Eric Neer"
+output: 
+  html_document:
+    toc: true
+date: 2100-01-01
+categories: ["R"]
+tags: ["algorithms", "visualizations"]
+---
+### Introduction
+In the section on sorting of the book [Algorithms to Live By](https://www.amazon.com/Algorithms-Live-Computer-Science-Decisions/dp/1627790365), the authors tell a story of [Danny Hillis'](https://en.wikipedia.org/wiki/Danny_Hillis) undergrad roommate at MIT.
+Whenever this roommate needed a pair of socks, he would would pull a sock from the clean laundry hamper.
+To find its mate, he would again pull a sock at random from the hamper, and if it was a match he was done.
+Should it not match, though, he would return the second sock to the hamper and choose at random again.
+With 10 different pairs of socks, the authors state that this method would take 19 pulls on average to complete the first pair, 17 for the second, and 110 times for 20 pairs.
+I wanted to explore this more and see just how inefficient this matching algorithm is as well as the statistics involved.
+
+### Problem Formulation
+<!--- roommate resampling w/ replacement --->
+```{r}
+```
+
