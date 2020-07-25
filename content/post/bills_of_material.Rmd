@@ -10,7 +10,6 @@ date: 2020-07-25
 categories: ["SQL", "data structures", "algorithms"]
 tags: ["R", "SQL"]
 projects: []
-draft: true
 references:
 - id: lunn1992
   title: "MRP: Integrating Material Requirements Planning and Modern Business"
