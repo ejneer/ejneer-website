@@ -146,17 +146,35 @@ Accumulating component quantities is accomplished by the added `sum()` and corre
 WITH RECURSIVE
 recursive_bom(Component, Quantity) AS (
 	-- The root of the tree, i.e. the component whose BOM we want
-	VALUES('Pen', NULL)
+	VALUES('Pen', 1)
 	UNION ALL
-	SELECT bom.Component, bom.Quantity
+	SELECT bom.Component, bom.Quantity * recursive_bom.Quantity
 	FROM bom JOIN recursive_bom ON bom.Parent = recursive_bom.Component
   )
 SELECT Component, sum(Quantity) AS [Total Qty Required] FROM recursive_bom
 GROUP BY Component
 ```
-Thus, in order to build 1 Pen assembly, a total of 10 tubing is required.
-To understand this, we can examine all components that require tubing in their BOM.
+Thus, in order to build 1 Pen assembly, a total of 18 Tubing is required.
+To understand this, we can examine all components that require Tubing in their BOM.
 ```{sql, connection = con}
-SELECT * FROM bom WHERE Component = 'Tubing'
+SELECT * FROM bom WHERE Component IN ('Tubing')
 ```
+
+Tracing the ancestry of each parent all the way to the top level Pen:
+
++ Inner ($5 \times 2 \times 1 = 10$ Tubing)
+  + 5 Tubing is required for each Inner subassembly.
+  + 2 Inners are required for each Lower Pen.
+  + 1 Lower Pen is required for each Pen.
++ Outer ($3 \times 2 \times 1 = 6$ Tubing)
+  + 3 Tubing is required for each Outer subassembly.
+  + 2 Outers are required for each Lower Pen.
+  + 1 Lower Pen is required for each Pen.
++ Tube ($2 \times 1 \times 1 \times 1 = 2$ Tubing)
+  + 2 Tubing is required for each Tube.
+  + 1 Tube is required for each Sleeve.
+  + 1 Sleeve is required for each Upper Barrel.
+  + 1 Upper Barrel is required for each Pen.
++ Grand total of 18 Tubing is required per Pen assembly.
+
 ### References

@@ -217,9 +217,9 @@ Accumulating component quantities is accomplished by the added <code>sum()</code
 <pre class="sql"><code>WITH RECURSIVE
 recursive_bom(Component, Quantity) AS (
     -- The root of the tree, i.e. the component whose BOM we want
-    VALUES(&#39;Pen&#39;, NULL)
+    VALUES(&#39;Pen&#39;, 1)
     UNION ALL
-    SELECT bom.Component, bom.Quantity
+    SELECT bom.Component, bom.Quantity * recursive_bom.Quantity
     FROM bom JOIN recursive_bom ON bom.Parent = recursive_bom.Component
   )
 SELECT Component, sum(Quantity) AS [Total Qty Required] FROM recursive_bom
@@ -256,7 +256,7 @@ GROUP BY Component</code></pre>
 </tr>
 <tr class="even">
 <td align="left">Pen</td>
-<td align="right">NA</td>
+<td align="right">1</td>
 </tr>
 <tr class="odd">
 <td align="left">Point</td>
@@ -268,7 +268,7 @@ GROUP BY Component</code></pre>
 </tr>
 <tr class="odd">
 <td align="left">Steel</td>
-<td align="right">4</td>
+<td align="right">8</td>
 </tr>
 <tr class="even">
 <td align="left">Top</td>
@@ -280,7 +280,7 @@ GROUP BY Component</code></pre>
 </tr>
 <tr class="even">
 <td align="left">Tubing</td>
-<td align="right">10</td>
+<td align="right">18</td>
 </tr>
 <tr class="odd">
 <td align="left">Upper Barrel</td>
@@ -289,9 +289,9 @@ GROUP BY Component</code></pre>
 </tbody>
 </table>
 </div>
-<p>Thus, in order to build 1 Pen assembly, a total of 10 tubing is required.
-To understand this, we can examine all components that require tubing in their BOM.</p>
-<pre class="sql"><code>SELECT * FROM bom WHERE Component = &#39;Tubing&#39;</code></pre>
+<p>Thus, in order to build 1 Pen assembly, a total of 18 Tubing is required.
+To understand this, we can examine all components that require Tubing in their BOM.</p>
+<pre class="sql"><code>SELECT * FROM bom WHERE Component IN (&#39;Tubing&#39;)</code></pre>
 <div class="knitsql-table">
 <table>
 <caption><span id="tab:unnamed-chunk-6">Table 4: </span>3 records</caption>
@@ -321,6 +321,29 @@ To understand this, we can examine all components that require tubing in their B
 </tbody>
 </table>
 </div>
+<p>Tracing the ancestry of each parent all the way to the top level Pen:</p>
+<ul>
+<li>Inner (<span class="math inline">\(5 \times 2 \times 1 = 10\)</span> Tubing)
+<ul>
+<li>5 Tubing is required for each Inner subassembly.</li>
+<li>2 Inners are required for each Lower Pen.</li>
+<li>1 Lower Pen is required for each Pen.</li>
+</ul></li>
+<li>Outer (<span class="math inline">\(3 \times 2 \times 1 = 6\)</span> Tubing)
+<ul>
+<li>3 Tubing is required for each Outer subassembly.</li>
+<li>2 Outers are required for each Lower Pen.</li>
+<li>1 Lower Pen is required for each Pen.</li>
+</ul></li>
+<li>Tube (<span class="math inline">\(2 \times 1 \times 1 \times 1 = 2\)</span> Tubing)
+<ul>
+<li>2 Tubing is required for each Tube.</li>
+<li>1 Tube is required for each Sleeve.</li>
+<li>1 Sleeve is required for each Upper Barrel.</li>
+<li>1 Upper Barrel is required for each Pen.</li>
+</ul></li>
+<li>Grand total of 18 Tubing is required per Pen assembly.</li>
+</ul>
 </div>
 </div>
 <div id="references" class="section level3 unnumbered">
