@@ -27,17 +27,13 @@ date_format = "Jan 2006"
   description = ""
 
 [[experience]]
-  title = "Mechanical Engineer, F-35 Program"
+  title = "Engineer, F-35 Program"
   company = "Northrop Grumman"
   company_url = ""
   location = "Redondo Beach, CA"
   date_start = "2016-02-01"
   date_end = "2019-08-01"
-  description = """
-  * Design aircraft modification and repairs
-  * Collect and analyze statistical process control data
-  * Act as design liaison for composite Weapons Bay Doors
-  """
+  description = ""
 
 [[experience]]
   title = "Project Engineer"
@@ -46,9 +42,6 @@ date_format = "Jan 2006"
   location = "Santa Fe Springs, CA"
   date_start = "2014-09-01"
   date_end = "2016-02-01"
-  description = """
-  * Designed custom process material kits to reduce customer layup time in composites manufacturing.
-  * Created and managed database of customer specifications and associated products.
-  """
+  description = ""
 
 +++

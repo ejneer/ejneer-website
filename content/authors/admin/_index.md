@@ -1,7 +1,7 @@
 ---
 authors:
 - admin
-bio: Aerospace engineer with an interest in programming and statistics.
+bio: Engineer with an interest in the application of statistics and software engineering to manufacturing and operations.
 education:
   courses:
   - course: MSc Aerospace Engineering 
