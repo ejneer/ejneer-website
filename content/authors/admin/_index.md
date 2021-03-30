@@ -1,7 +1,7 @@
 ---
 authors:
 - admin
-bio: Engineer with an interest in the application of statistics and software engineering to manufacturing and operations.
+bio: Engineer with an interest in the application of statistics and software engineering to operations.
 education:
   courses:
   - course: MSc Aerospace Engineering 
@@ -42,6 +42,5 @@ user_groups:
 - Researchers
 - Visitors
 ---
-Experienced aerospace and manufacturing engineer with an interest in the application of statistics and software engineering to these fields.
-Enjoys developing in R and Python.
-Holds a DoD Secret clearance and a Masters degree in Aerospace Engineering. 
+Experienced engineer with an interest in the application of statistics and software engineering to novel operations problems. 
+Enjoys developing in R and Python. Holds a DoD Secret clearance and a Masters degree in Aerospace Engineering.
