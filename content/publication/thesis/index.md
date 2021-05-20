@@ -1,6 +1,6 @@
 ---
 title: "Stiffness Predictions of Carbon Nanotube Reinforced Two and Three-Phase Polymer Composites"
-url_pdf: "https://pqdtopen.proquest.com/doc/1732677857.html?FMT=AI&pubnum=1603339"
+url_pdf: "https://www.proquest.com/docview/1732677857/BE37C102B9DB4853PQ/1"
 abstract: Carbon nanotubes are a relatively new area of research which has gained significant attention in published literature.
   One reason for this interest is their usein multi-phase composites, specifically where they can enhance traditional polymer matrices.
   Many authors have attempted to adapt conventional micromechanical analyses reserved for microfibers to the nano scale.
