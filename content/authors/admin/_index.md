@@ -12,11 +12,11 @@ education:
     year: 2012
 email: "ericjneer@gmail.com"
 interests:
-- Manufacturing
+- Manufacturing & Operations
 - Statistics
 - Software Engineering with R and Python
 organizations:
-- name: Stanley Black & Decker
+- name: Mercury Insurance
   url: ""
 role: Engineer & Data Scientist
 social:

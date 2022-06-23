@@ -19,11 +19,20 @@ date_format = "Jan 2006"
 
 [[experience]]
   title = "Data Scientist"
+  company = "Mercury Insurance"
+  company_url = ""
+  location = "Brea, CA"
+  date_start = "2021-06-01"
+  date_end = ""
+  description = ""
+
+[[experience]]
+  title = "Data Scientist"
   company = "Stanley Black & Decker"
   company_url = ""
   location = "Brea, CA"
   date_start = "2019-11-01"
-  date_end = ""
+  date_end = "2021-06-01"
   description = ""
 
 [[experience]]
