@@ -1,6 +1,7 @@
 +++
 title = "Undirected Graph Traversal"
 author = ["Eric Neer"]
+date = 2022-07-13
 tags = ["lisp", "algorithms"]
 draft = false
 +++
