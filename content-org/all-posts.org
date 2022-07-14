@@ -1,23 +1,57 @@
-+++
-title = "Undirected Graph Traversal"
-author = ["Eric Neer"]
-description = "Traversing undirected graphs."
-date = 2022-07-13
-tags = ["lisp", "algorithms"]
-draft = false
-+++
+#+hugo_base_dir: ../
 
-{{< figure src="/ox-hugo/graph.svg" >}}
+* Posts
+:PROPERTIES:
+:EXPORT_HUGO_SECTION: post
+:END:
+** TODO My first post :tag1:@category1:
+:PROPERTIES:
+:EXPORT_FILE_NAME: my-first-post
+:END:
+:LOGBOOK:
+- State "DONE"       from "TODO"       [2022-06-22 Wed 22:08]
+- State "DONE"       from              [2022-06-22 Wed 19:27]
+:END:
+This is my post body
+** Undirected Graph Traversal :lisp:algorithms:
+:PROPERTIES:
+:HEADER-ARGS: :exports code
+:EXPORT_FILE_NAME: undirected-graph-traversal
+:EXPORT_DATE: 2022-07-13
+:END:
+
+#+begin_description
+Traversing undirected graphs.
+#+end_description
+
+#+begin_src dot :file graph.svg :cmdline -Tsvg :results file :exports results
+graph g {
+
+  1--2
+  1--5
+  1--6
+  2--3
+  2--5
+  3--4
+  4--5
+  {rank=same 2 5 6}
+  {rank=same 3 4}
+}
+
+#+end_src
+
+#+RESULTS:
+[[file:graph.svg]]
 
 
-## Graphs and Nodes {#graphs-and-nodes}
+*** Graphs and Nodes
 
 Graphs are a collection of nodes and edges, and can be directed (their edges
 have a "directed") or undirected (edges are bi-directional). A hash table is
 used to model the edges, with nodes as keys whose values are a list of nodes the
 key node is connected to.
 
-```lisp
+#+begin_src lisp
 (defclass graph ()
   ((edges
     :initform (make-hash-table)
@@ -43,11 +77,11 @@ key node is connected to.
   ; helpful when viewing traversal results
   (print-unreadable-object (n out :type t)
     (format out "nid: ~s" (nid n))))
-```
+#+end_src
 
 Neighbors are any nodes that are connected by an edge.
 
-```lisp
+#+begin_src lisp
 (defmethod neighbors ((obj graph) (n1 node))
   (gethash n1 (edges obj)))
 
@@ -58,14 +92,13 @@ Neighbors are any nodes that are connected by an edge.
   (if (member n2 (neighbors g n1))
       t
       nil))
-```
+#+end_src
 
-
-## Defining a Graph {#defining-a-graph}
+*** Defining a Graph
 
 The graph at the top of the page can then be defined as follows:
 
-```lisp
+#+begin_src lisp
 (defparameter g (make-instance 'graph))
 (defparameter one (make-instance 'node :nid 1))
 (defparameter two (make-instance 'node :nid 2))
@@ -81,18 +114,17 @@ The graph at the top of the page can then be defined as follows:
 (add-edge g two five)
 (add-edge g three four)
 (add-edge g four five)
-```
+#+end_src
 
+*** Work List
 
-## Work List {#work-list}
-
-`work-list` is a base class that acts as a container for nodes that have been
+~work-list~ is a base class that acts as a container for nodes that have been
 seen during graph traversal and those that are waiting to be operated on.
-`work-next` pops nodes from the waiting list, so the first `waiting` node is
+~work-next~ pops nodes from the waiting list, so the first ~waiting~ node is
 always returned. Thus the order of insertion into the waiting list determines
 the order in which nodes are worked.
 
-```lisp
+#+begin_src lisp
 (defclass work-list ()
     ((seen
      :initform nil
@@ -108,24 +140,21 @@ the order in which nodes are worked.
 
 (defmethod work-list-empty-p ((wl work-list))
   (if (waiting wl) nil t))
-```
+#+end_src
 
-
-## Generic Graph Traversal {#generic-graph-traversal}
+*** Generic Graph Traversal
 
 Graphs can be traversed (visiting each node) in a generic fashion by:
 
-1.  Given a start node
-2.  Find all neighbors of the start node that haven't been seen before
-3.  Add these missing neighbors to a collection of node's waiting to be worked
-4.  Mark the start node as having been seen
-5.  Grab the next node from the waiting collection
-6.  Repeat the process with the next node, stopping when there is no more nodes
-    waiting
+1. Given a start node
+2. Find all neighbors of the start node that haven't been seen before
+3. Add these missing neighbors to a collection of node's waiting to be worked
+4. Mark the start node as having been seen
+5. Grab the next node from the waiting collection
+6. Repeat the process with the next node, stopping when there is no more nodes
+   waiting
 
-<!--listend-->
-
-```lisp
+#+begin_src lisp
 (defmethod traverse-graph ((obj graph) (start node) (wl work-list))
   (add-work wl (list start))
     (loop while (not (work-list-empty-p wl)) do
@@ -138,88 +167,87 @@ Graphs can be traversed (visiting each node) in a generic fashion by:
 
 (defun ordered-set-difference (list1 list2)
   (loop for x in list1 when (not (find x list2)) collect x))
-```
+#+end_src
 
+#+RESULTS:
+: ORDERED-SET-DIFFERENCE
 
-## Breadth First Search {#breadth-first-search}
+*** Breadth First Search
 
 Breadth first traversal visits all neighbors of the start node, then all neighbors
 of the neighbors, and so on. This behavior is modeled by using a first-in
-first-out queue to contain the nodes that are waiting to be visited. `work-list`
+first-out queue to contain the nodes that are waiting to be visited. ~work-list~
 can be made to act as a queue by appending unseen neighbors of a given node to
-the end of the waiting list. `naive-queue` subclasses `work-list` to allow
-specialization of the `add-work` method for queue insertion behavior.
+the end of the waiting list. ~naive-queue~ subclasses ~work-list~ to allow
+specialization of the ~add-work~ method for queue insertion behavior.
 
-```lisp
+#+begin_src lisp
 (defclass naive-queue (work-list) ())
 
 (defmethod add-work ((nq naive-queue) new-work)
   (setf (waiting nq)
         (nconc (waiting nq) new-work)))
-```
+#+end_src
 
-Traversing `g` in a breadth-first manner would happen as follows:
+Traversing ~g~ in a breadth-first manner would happen as follows:
 
 | Seen             | Current-Node | Queue   |
-|------------------|--------------|---------|
-| -                | 1            | 2, 5, 6 |
-| 1                | 2            | 5, 6, 3 |
-| 1, 2             | 5            | 6, 3, 4 |
-| 1, 2, 5          | 6            | 3, 4    |
-| 1, 2, 5, 6       | 3            | 4       |
-| 1, 2, 5, 6, 3    | 4            | -       |
-| 1, 2, 5, 6, 3, 4 | -            | -       |
+|------------------+--------------+---------|
+| -                |            1 | 2, 5, 6 |
+| 1                |            2 | 5, 6, 3 |
+| 1, 2             |            5 | 6, 3, 4 |
+| 1, 2, 5          |            6 | 3, 4    |
+| 1, 2, 5, 6       |            3 | 4       |
+| 1, 2, 5, 6, 3    |            4 | -       |
+| 1, 2, 5, 6, 3, 4 |            - | -       |
 
-Using `naive-queue` to traverse the graph:
+Using ~naive-queue~ to traverse the graph:
 
-```lisp
+#+begin_src lisp :exports both
 (defparameter work-list-queue (make-instance 'naive-queue))
 (traverse-graph g one work-list-queue)
-```
+#+end_src
 
-```text
-(#<NODE nid: 1> #<NODE nid: 2> #<NODE nid: 5> #<NODE nid: 6> #<NODE nid: 3>
- #<NODE nid: 4>)
-```
+#+RESULTS:
+: (#<NODE nid: 1> #<NODE nid: 2> #<NODE nid: 5> #<NODE nid: 6> #<NODE nid: 3>
+:  #<NODE nid: 4>)
 
-
-## Depth First Search {#depth-first-search}
+*** Depth First Search
 
 Depth first search visits the first child of the start node, followed by the
 first child of the first child, etc. This is modeled with a first-in last-out
 stack to contain waiting nodes. Insertion in to the stack puts the unseen
-neighbors of a given node on the front of the waiting list. `naive-stack`
-subclasses `work-list` such that `add-work` may be specialized to accomplish
+neighbors of a given node on the front of the waiting list. ~naive-stack~
+subclasses ~work-list~ such that ~add-work~ may be specialized to accomplish
 this.
 
-```lisp
+#+begin_src lisp
 (defclass naive-stack (work-list) ())
 
 (defmethod add-work ((ns naive-stack) new-work)
   (setf (waiting ns)
         (nconc new-work (waiting ns))))
-```
+#+end_src
 
-Traversing `g` in a depth-first manner would happen as follows:
+Traversing ~g~ in a depth-first manner would happen as follows:
 
 | Seen             | Current-Node | Stack   |
-|------------------|--------------|---------|
-| -                | 1            | 2, 5, 6 |
-| 1                | 2            | 3, 5, 6 |
-| 1, 2             | 3            | 4, 5, 6 |
-| 1, 2, 3          | 4            | 5, 6    |
-| 1, 2, 3, 4       | 5            | 6       |
-| 1, 2, 3, 4, 5    | 6            | -       |
-| 1, 2, 3, 4, 5, 6 | -            | -       |
+|------------------+--------------+---------|
+| -                |            1 | 2, 5, 6 |
+| 1                |            2 | 3, 5, 6 |
+| 1, 2             |            3 | 4, 5, 6 |
+| 1, 2, 3          |            4 | 5, 6    |
+| 1, 2, 3, 4       |            5 | 6       |
+| 1, 2, 3, 4, 5    |            6 | -       |
+| 1, 2, 3, 4, 5, 6 |            - | -       |
 
-Using `naive-stack` to traverse the graph:
+Using ~naive-stack~ to traverse the graph:
 
-```lisp
+#+begin_src lisp :exports both
 (defparameter work-list-stack (make-instance 'naive-stack))
 (traverse-graph g one work-list-stack)
-```
+#+end_src
 
-```text
-(#<NODE nid: 1> #<NODE nid: 2> #<NODE nid: 3> #<NODE nid: 4> #<NODE nid: 5>
- #<NODE nid: 6>)
-```
+#+RESULTS:
+: (#<NODE nid: 1> #<NODE nid: 2> #<NODE nid: 3> #<NODE nid: 4> #<NODE nid: 5>
+:  #<NODE nid: 6>)
