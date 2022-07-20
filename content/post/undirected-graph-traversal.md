@@ -13,7 +13,7 @@ draft = false
 ## Graphs and Nodes {#graphs-and-nodes}
 
 Graphs are a collection of nodes and edges, and can be directed (their edges
-have a "directed") or undirected (edges are bi-directional). A hash table is
+have a "direction") or undirected (edges are bi-directional). A hash table is
 used to model the edges, with nodes as keys whose values are a list of nodes the
 key node is connected to.
 
