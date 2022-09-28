@@ -1,0 +1,113 @@
+#+title: Binary Trees
+
+* BinaryTree: A Basic Binary Tree
+
+Simplest way to represent a node ~u~ is to store the at most three neighbors
+
+#+begin_src lisp
+(defclass binary-tree-node ()
+  ((left :initarg :left
+        :accessor left)
+  (right :initarg :right
+         :accessor right)
+  (parent :initarg :parent
+          :accessor parent)))
+#+end_src
+
+#+RESULTS:
+: #<STANDARD-CLASS COMMON-LISP-USER::BINARY-TREE-NODE>
+
+We can compute the depth of a node ~u~ in a binary tree by counting the number
+of steps on the path from ~u~ to the root.
+
+#+begin_src lisp
+(defmethod depth ((u binary-tree-node))
+    (let ((d 0))
+      (loop while (u.parent) do (incf d))
+      d))
+#+end_src
+
+#+RESULTS:
+: #<STANDARD-METHOD COMMON-LISP-USER::DEPTH (BINARY-TREE-NODE) {70084B4643}>
+
+** Recursive Algorithms
+To compute the size of (# nodes) in a binary tree rooted at node ~u~, we
+recursively compute the sizes of the two subtrees rooted at the children of ~u~,
+sum up these sizes, and add one:
+
+#+begin_src lisp
+(defmethod size ((u binary-tree-node))
+  if (not u)
+  0
+  (+ 1 (size (left u) (right u))))
+#+end_src
+
+#+RESULTS:
+: #<STANDARD-METHOD COMMON-LISP-USER::SIZE (BINARY-TREE-NODE) {70085224D3}>
+
+To compute the height of a node ~u~, we can compute the height of ~u~'s two
+subtrees, take the maximum, and add one:
+
+#+begin_src lisp
+(defmethod height ((u binary-tree-node))
+  if (not u)
+  -1
+  (+ 1 (max (height (left u)) (height (right u)))))
+#+end_src
+
+#+RESULTS:
+: #<STANDARD-METHOD COMMON-LISP-USER::HEIGHT (BINARY-TREE-NODE) {70085E17D3}>
+** Traversing Binary Trees
+The two algorithms from the previous sectoin both use recursion to visit all the
+nodes in a binary tree. Each of them visits the nodes of the binary tree in the
+same order as the following code:
+
+#+begin_src lisp
+(defmethod traverse ((u binary-tree-node))
+  if (u)
+  (progn
+    (traverse (left u))
+    (traverse (right u))))
+#+end_src
+
+#+RESULTS:
+: #<STANDARD-METHOD COMMON-LISP-USER::TRAVERSE (BINARY-TREE-NODE) {700867CAF3}>
+
+Using recursion this way produces very short, simple code, but it can also be
+problematic. The maximum depth of the recursion is given by the maximum depth of
+a node in the binary tree, i.e. the tree's height. If the height of a tree is
+very large, then this recursion could very well use more stack space than is
+available, causing a crash.
+
+To traverese a binary tree without recursion, you can use an algorithm that
+relies on where it came from to determine where it will go next. If we arrive at
+a node ~u~ from ~(parent u)~, then the next thing to do is to visit ~(left u)~.
+If we arrive at ~u~ from ~(left u)~, then the next thing to do is to visit
+~(right u)~. If we arrive at ~u~ from ~(right u)~, then we are done visiting
+~u~'s subtree, and so we return to ~(parent u)~. Implemented in the following:
+
+#+begin_src lisp
+(defmethod traverse2 ((u binary-tree-node))
+  (loop while u do (progn ((cond (((eql prev (parent u))
+                          (cond ((left u) (setq next (left u))
+                                 (right u) (setq next (right u))
+                                 t (setq next (parent u)))))
+                          ((eql prev (left u))
+                          (if (right u) (setq next (right u)) (setq next (parent u))))
+                          (t (setq next (parent u))))))
+                          (setq prev u)
+                          (setq u next))))
+#+end_src
+
+#+RESULTS:
+: #<STANDARD-METHOD COMMON-LISP-USER::TRAVERSE2 (BINARY-TREE-NODE) {7008B0C9A3}>
+
+The same facts that can be computed with recursive algorithms can also be
+computed in this way, without recursion. For example, to comput the size of the
+tree we keep a counter, ~n~, and increment ~n~ whenever visiting a node for the
+first time.
+
+#+begin_src lisp
+(defmethod size2 ((u binary-tree-node))
+  )
+#+end_src

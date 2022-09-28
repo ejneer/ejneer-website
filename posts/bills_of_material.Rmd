@@ -1,0 +1,180 @@
+---
+title: "Bills of Material"
+subtitle: ""
+summary: "Investigating BOMs and How to Query Them"
+author: "Eric Neer"
+output: 
+  html_document:
+    toc: true
+date: 2020-07-25
+categories: ["SQL", "data structures", "algorithms"]
+tags: ["R", "SQL"]
+projects: []
+references:
+- id: lunn1992
+  title: "MRP: Integrating Material Requirements Planning and Modern Business"
+  author:
+    - family: Lunn
+      given: Terry
+    - family: Neff
+      given: Susan
+  issued:
+    year: 1992
+  type: book
+---
+
+```{r, include=FALSE}
+library(DiagrammeR)
+library(RSQLite)
+
+con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+
+bom <- tibble::tribble(
+  ~Component, ~Parent, ~Quantity,
+  "Pen", NA, 1,
+  "Lower Pen", "Pen", 1,
+  "Upper Barrel", "Pen", 1,
+  "Ink", "Pen", 1,
+  "Inner", "Lower Pen", 2,
+  "Point", "Lower Pen", 1,
+  "Outer", "Lower Pen", 2,
+  "Sleeve", "Upper Barrel", 1,
+  "Clip", "Upper Barrel", 2,
+  "Tubing", "Inner", 5,
+  "Tubing", "Outer", 3,
+  "Top", "Sleeve", 1,
+  "Tube", "Sleeve", 1,
+  "Steel", "Clip", 4,
+  "Tubing", "Tube", 2
+)
+
+DBI::dbWriteTable(con, "bom", bom)
+```
+
+### Description
+In manufacturing, a bill of materials (BOM) defines all of the items required to produce a good.
+Often times this consists of raw materials (e.g. steel, aluminum) that are transformed or other components that are assembled to make the finished product.
+It may also contain ancillary items used during manufacturing, such as tooling or consumable chemicals.
+
+<div align="center">
+```{r echo=FALSE}
+grViz("
+  digraph {
+    node [shape='box']
+    edge [arrowhead='none']
+    LP [label='Lower Pen']
+    UB [label='Upper Barrel']
+    T1 [label='Tubing']
+    T2 [label='Tubing']
+    
+    Pen -> {LP Ink UB}
+    LP -> {Inner Point Outer}
+    Inner -> T1
+    Outer -> T2
+
+    UB -> {Sleeve Clip}
+    Sleeve -> {Top Tube}
+    Tube -> Tubing
+    Clip -> Steel
+    
+    node [shape='plaintext']
+    L0 [label='Level 0']
+    L1 [label='Level 1']
+    L2 [label='Level 2']
+    L3 [label='Level 3']
+    L4 [label='Level 4']
+    
+    subgraph labels {
+      rankdir='TB'
+      L0 -> L1 -> L2 -> L3 -> L4 [style='invis']
+    }
+  }
+")
+```
+<figcaption>Hypothetical multi-level bill of materials for a pen. [@lunn1992]</figcaption>
+</div>
+
+### Data Structures
+Looking at the bill of materials depiction above, it is obvious that a BOM is really just a [tree](https://en.wikipedia.org/wiki/Tree_structure) whose nodes are components (or subassemblies) and edges indicate a component's belonging to its parent's BOM.
+The quantity of a component in a parent's BOM would also be indicated by an edge, as it is a property of the relationship between the parent and component.
+
+Most material requirements planning (MRP) systems persist data using a typical relational database which stores information in a tabular fashion.
+Thus, the information encoded in the BOM tree structure must be transformed to fit within a table structure.
+This is typically done using an [adjacency list](https://en.wikipedia.org/wiki/Adjacency_list) which may be easily encoded as a table, with 1 row per relationship.
+The table below represents the pen bill of materials as it may appear in a database.
+
+```{sql, connection = con, echo = FALSE, max.print = 100}
+SELECT * FROM bom
+```
+### Applications
+With the BOM set up as above, there are some interesting questions we can answer with SQL queries.
+
+#### Finding Components of an (Sub-)Assembly
+Finding all components that comprise a particular assembly's bill of material is a common MRP question.
+Obtaining a complete BOM requires finding the immediate children of the assembly, followed by children of the children, and so forth.
+This is complicated by the fact that we generally do not know the depth of a particular BOM.
+
+The solution is to recursively find children of a component until we've reached a component that has no children (a leaf node in tree parlance).
+Algorithmically, this is referred to as a [breadth (BFS)](https://en.wikipedia.org/wiki/Breadth-first_search) or [depth-first search (DFS)](https://en.wikipedia.org/wiki/Depth-first_search), depending on the order in which results are reported.
+
+Most database flavors implement this using a [recursive common table expression (CTE)](https://www.essentialsql.com/recursive-ctes-explained/).
+Using our Pen bill of materials example, the below SQL query is how a recursive CTE would be implemented in SQLite to find all components of the Upper Barrel subassembly.
+```{sql, connection = con}
+-- A depth-first search of the Upper Barrel subassembly
+WITH RECURSIVE
+recursive_bom(Component, Level) AS (
+	-- The root of the tree, i.e. the component whose BOM we want
+	VALUES('Upper Barrel', 0)
+	UNION ALL
+	SELECT bom.Component, recursive_bom.level + 1
+	FROM bom JOIN recursive_bom ON bom.Parent = recursive_bom.Component
+	ORDER BY recursive_bom.level + 1 DESC
+  )
+-- Add leading periods to help visualize bom depth
+SELECT level, substr('..........', 1, level * 3) || Component AS Component FROM recursive_bom
+```
+
+#### Finding Total Quantities Required for All Components
+Another important question is how many of each component is required to build a complete assembly.
+For example, looking at the BOM graph, it can be seen that tubing is required in multiple subassemblies, namely the Inner, Outer, and Tube.
+To build a complete pen, we would want to know the total amount of tubing required across all components, regardless of bom depth.
+
+Again a recursive query is used, with the added complexity of accumulating all quantities for identical components along the way.
+Accumulating component quantities is accomplished by the added `sum()` and corresponding `GROUP BY` clause in the sql query.
+
+```{sql, connection = con, max.print = 100}
+WITH RECURSIVE
+recursive_bom(Component, Quantity) AS (
+	-- The root of the tree, i.e. the component whose BOM we want
+	VALUES('Pen', 1)
+	UNION ALL
+	SELECT bom.Component, bom.Quantity * recursive_bom.Quantity
+	FROM bom JOIN recursive_bom ON bom.Parent = recursive_bom.Component
+  )
+SELECT Component, sum(Quantity) AS [Total Qty Required] FROM recursive_bom
+GROUP BY Component
+```
+Thus, in order to build 1 Pen assembly, a total of 18 Tubing is required.
+To understand this, we can examine all components that require Tubing in their BOM.
+```{sql, connection = con}
+SELECT * FROM bom WHERE Component IN ('Tubing')
+```
+
+Tracing the ancestry of each parent all the way to the top level Pen:
+
++ Inner ($5 \times 2 \times 1 = 10$ Tubing)
+  + 5 Tubing is required for each Inner subassembly.
+  + 2 Inners are required for each Lower Pen.
+  + 1 Lower Pen is required for each Pen.
++ Outer ($3 \times 2 \times 1 = 6$ Tubing)
+  + 3 Tubing is required for each Outer subassembly.
+  + 2 Outers are required for each Lower Pen.
+  + 1 Lower Pen is required for each Pen.
++ Tube ($2 \times 1 \times 1 \times 1 = 2$ Tubing)
+  + 2 Tubing is required for each Tube.
+  + 1 Tube is required for each Sleeve.
+  + 1 Sleeve is required for each Upper Barrel.
+  + 1 Upper Barrel is required for each Pen.
++ Grand total of 18 Tubing is required per Pen assembly.
+
+### References
