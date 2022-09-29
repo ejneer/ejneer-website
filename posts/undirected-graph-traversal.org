@@ -1,15 +1,6 @@
 #+title: Undirected Graph Traversal
 
 * Undirected Graph Traversal :lisp:algorithms:
-:PROPERTIES:
-:HEADER-ARGS: :exports code
-:EXPORT_FILE_NAME: undirected-graph-traversal
-:EXPORT_DATE: 2022-07-13
-:END:
-
-#+begin_description
-Traversing undirected graphs.
-#+end_description
 
 #+begin_src dot :file img/graph.svg :cmdline -Tsvg :results file :exports results
 graph g {
@@ -33,7 +24,7 @@ graph g {
 ** Graphs and Nodes
 
 Graphs are a collection of nodes and edges, and can be directed (their edges
-have a "directed") or undirected (edges are bi-directional). A hash table is
+have a "direction") or undirected (edges are bi-directional). A hash table is
 used to model the edges, with nodes as keys whose values are a list of nodes the
 key node is connected to.
 
@@ -66,7 +57,7 @@ key node is connected to.
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP:PRINT-OBJECT (NODE T) {7006FDAFB3}>
+: #<STANDARD-METHOD COMMON-LISP:PRINT-OBJECT (NODE T) {70064BF6E3}>
 
 Neighbors are any nodes that are connected by an edge.
 
@@ -138,7 +129,7 @@ the order in which nodes are worked.
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::WORK-LIST-EMPTY-P (WORK-LIST) {7007602073}>
+: #<STANDARD-METHOD COMMON-LISP-USER::WORK-LIST-EMPTY-P (WORK-LIST) {7006A6AB03}>
 
 ** Generic Graph Traversal
 
@@ -188,7 +179,7 @@ specialization of the ~add-work~ method for queue insertion behavior.
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::ADD-WORK (NAIVE-QUEUE T) {700775C4B3}>
+: #<STANDARD-METHOD COMMON-LISP-USER::ADD-WORK (NAIVE-QUEUE T) {7006BFD4F3}>
 
 Traversing ~g~ in a breadth-first manner would happen as follows:
 
@@ -231,7 +222,7 @@ this.
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::ADD-WORK (NAIVE-STACK T) {7007905913}>
+: #<STANDARD-METHOD COMMON-LISP-USER::ADD-WORK (NAIVE-STACK T) {7006D7A0F3}>
 
 Traversing ~g~ in a depth-first manner would happen as follows:
 
