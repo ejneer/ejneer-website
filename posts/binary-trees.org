@@ -1,34 +1,84 @@
 #+title: Binary Trees
 
-* BinaryTree: A Basic Binary Tree
+* Binary Trees
+This chapter introduces one of the most fundamental structures in computer
+science: binary trees. The use of the word tree here comes from the fact that,
+when we draw them, the resultant drawing often resembles the trees found in a
+forest. There are many ways of defining binary trees. Mathematically, a binary
+tree is a connected, undirected, finite graph with no cycles, and no vertex of
+degree greater than three.
+
+For most computer science applications, binary trees are rooted: A special node
+~r~, of degree at most two, is called the root of the tree. For every node ~u !=
+r~, the second node on the path from ~u~ to ~r~ is called the parent of ~u~.
+Each of the other nodes adjacent to ~u~ is called a child of ~u~. Most of the
+binary trees we are interested in are ordered, so we distinguish between the
+left child and right child of ~u~.
+
+In illustrations, binary trees are usually drawn from the root downward, with
+the root at the top of the drawing and the left and right children respectively
+given by left and right positions in the drawing.
+
+Because binary trees are so important, a certain terminology has developed for
+them: The depth of a node ~u~ in a binary tree is the length of the path from
+~u~ to the root of the tree. If a node ~w~ is on the path from ~u~ to ~r~, then
+~w~ is called an ancestor of ~u~ and ~u~ a descendant of ~w~. The subtree of a
+node ~u~ is the binary tree that is rooted at ~u~ and contains all of ~u~'s
+descendants. The height of a node ~u~ is the length of the longest path from ~u~
+to one of its descendants. The height of a tree is the height of its root. A
+node ~u~ is a leaf if it has no children.
+
+We sometimes think of the tree as being augmented with external nodes. Any node
+that does not have a left child has an external node as its left child, and,
+correspondingly, any node that does not have a right child has an external node
+as its right child. It is easy to verify, by induction, that a binary tree with
+~n >= 1~ real nodes has ~n + 1~ external nodes.
+* A Basic Binary Tree
 
 Simplest way to represent a node ~u~ is to store the at most three neighbors
 
 #+begin_src lisp
 (defclass binary-tree-node ()
   ((left :initarg :left
-        :accessor left)
+        :accessor left
+        :initform 'empty)
   (right :initarg :right
-         :accessor right)
+         :accessor right
+         :initform 'empty)
   (parent :initarg :parent
-          :accessor parent)))
+          :accessor parent
+          :initform 'empty)))
+
+(defmethod empty-node-p ((n binary-tree-node) slot)
+  (eql (slot-value n slot) 'empty))
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-CLASS COMMON-LISP-USER::BINARY-TREE-NODE>
+: #<STANDARD-METHOD COMMON-LISP-USER::EMPTY-NODE-P (BINARY-TREE-NODE T) {700637E333}>
+
+The binary tree itself can then be represented by a reference to its root node, ~r~:
+
+#+begin_src lisp
+(setf *r* (make-instance 'binary-tree-node))
+#+end_src
+
+#+RESULTS:
+: #<BINARY-TREE-NODE {7005770513}>
 
 We can compute the depth of a node ~u~ in a binary tree by counting the number
 of steps on the path from ~u~ to the root.
 
 #+begin_src lisp
 (defmethod depth ((u binary-tree-node))
-    (let ((d 0))
-      (loop while (u.parent) do (incf d))
-      d))
+  (let ((d 0))
+    (loop while (not (empty-node-p u 'parent))
+          do (incf d)
+          do (setf u (parent u)))
+    d))
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::DEPTH (BINARY-TREE-NODE) {70084B4643}>
+: #<STANDARD-METHOD COMMON-LISP-USER::DEPTH (BINARY-TREE-NODE) {700699FCB3}>
 
 ** Recursive Algorithms
 To compute the size of (# nodes) in a binary tree rooted at node ~u~, we
@@ -37,41 +87,44 @@ sum up these sizes, and add one:
 
 #+begin_src lisp
 (defmethod size ((u binary-tree-node))
-  if (not u)
-  0
-  (+ 1 (size (left u) (right u))))
+  "Compute the size of a binary tree rooted at U"
+  (let ((sleft (if (empty-node-p u 'left) 0 (size (left u))))
+        (sright (if (empty-node-p u 'right) 0 (size (right u)))))
+    (+ 1 sleft sright)))
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::SIZE (BINARY-TREE-NODE) {70085224D3}>
+: #<STANDARD-METHOD COMMON-LISP-USER::SIZE (BINARY-TREE-NODE) {700703A893}>
 
 To compute the height of a node ~u~, we can compute the height of ~u~'s two
 subtrees, take the maximum, and add one:
 
 #+begin_src lisp
 (defmethod height ((u binary-tree-node))
-  if (not u)
-  -1
-  (+ 1 (max (height (left u)) (height (right u)))))
+  (let ((hleft (if (empty-node-p u 'left) 0 (height (left u))))
+        (hright (if (empty-node-p u 'right) 0 (height (right u)))))
+    (+ 1 (max hleft hright))))
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::HEIGHT (BINARY-TREE-NODE) {70085E17D3}>
+: #<STANDARD-METHOD COMMON-LISP-USER::HEIGHT (BINARY-TREE-NODE) {70084CE5D3}>
 ** Traversing Binary Trees
-The two algorithms from the previous sectoin both use recursion to visit all the
+:PROPERTIES:
+:ORDERED:  t
+:END:
+The two algorithms from the previous section both use recursion to visit all the
 nodes in a binary tree. Each of them visits the nodes of the binary tree in the
 same order as the following code:
 
 #+begin_src lisp
 (defmethod traverse ((u binary-tree-node))
-  if (u)
-  (progn
-    (traverse (left u))
-    (traverse (right u))))
+  (print u)
+  (if (not (empty-node-p u 'left)) (traverse (left u)))
+  (if (not (empty-node-p u 'right)) (traverse (right u))))
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::TRAVERSE (BINARY-TREE-NODE) {700867CAF3}>
+: #<STANDARD-METHOD COMMON-LISP-USER::TRAVERSE (BINARY-TREE-NODE) {7005D40783}>
 
 Using recursion this way produces very short, simple code, but it can also be
 problematic. The maximum depth of the recursion is given by the maximum depth of
@@ -87,27 +140,77 @@ If we arrive at ~u~ from ~(left u)~, then the next thing to do is to visit
 ~u~'s subtree, and so we return to ~(parent u)~. Implemented in the following:
 
 #+begin_src lisp
-(defmethod traverse2 ((u binary-tree-node))
-  (loop while u do (progn ((cond (((eql prev (parent u))
-                          (cond ((left u) (setq next (left u))
-                                 (right u) (setq next (right u))
-                                 t (setq next (parent u)))))
-                          ((eql prev (left u))
-                          (if (right u) (setq next (right u)) (setq next (parent u))))
-                          (t (setq next (parent u))))))
-                          (setq prev u)
-                          (setq u next))))
+(defun traverse2 ()
+  (flet ((get-next (curr prev)
+                  (cond ((eql prev (parent curr))
+                         (cond ((not (empty-node-p curr 'left)) (left curr))
+                               ((not (empty-node-p curr 'right)) (right curr))
+                               (t (parent curr))))
+                        ((eql prev (left curr))
+                         (if (not (empty-node-p curr 'right))
+                             (right curr)
+                             (parent curr)))
+                        (t (parent curr)))))
+    (let ((u *r*)
+          (prev 'empty)
+          (next 'empty))
+      (loop while (not (eql u 'empty))
+          do (print u)
+          do (setf next (get-next u prev)
+                   prev u
+                   u next)))))
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::TRAVERSE2 (BINARY-TREE-NODE) {7008B0C9A3}>
+: TRAVERSE2
 
 The same facts that can be computed with recursive algorithms can also be
-computed in this way, without recursion. For example, to comput the size of the
+computed in this way, without recursion. For example, to compute the size of the
 tree we keep a counter, ~n~, and increment ~n~ whenever visiting a node for the
 first time.
 
 #+begin_src lisp
-(defmethod size2 ((u binary-tree-node))
-  )
+(defun size2 ()
+  (flet ((get-next (curr prev)
+                  (cond ((eql prev (parent curr))
+                           (cond ((not (empty-node-p curr 'left)) (left curr))
+                                  ((not (empty-node-p curr 'right)) (right curr))
+                                  (t (parent curr))))
+                          ((eql prev (left curr)) (if (not (empty-node-p curr 'right))
+                                                      (right curr)
+                                                      (parent curr)))
+                          (t (parent curr)))))
+    (let ((u *r*)
+          (prev 'empty)
+          (next 'empty)
+          (n 0))
+      (loop while (not (eql u 'empty))
+            do (print u)
+            if (eql prev (parent u)) do (incf n)
+            do (setf next (get-next u prev)
+                   prev u
+                   u next))
+      n)))
 #+end_src
+
+#+RESULTS:
+: SIZE2
+
+In some implementations of binary trees, the ~parent~ field is not used. When
+this is the case, a non-recursive implementation is still possible, but the
+implementation has to used a list (or stack) to keep track of the path from the
+current node to the root.
+
+A special kind of traversal that does not fit the pattern of the above functions
+is the breath-first traversal. In a breadth-first traversal, the nodes are
+visited level-by-level starting at the root and moving down, visiting the nodes
+at each level from left to right. This is similar to the way that we would read
+a page of English text. Breath-first traversal is implemented using a queue ~q~
+that initially only contains the root, ~r~. At each step, we extract the next
+node ~u~ from ~q~, process ~u~ and add ~(left u)~ and ~(right u)~ (if they
+aren't empty) to ~q~:
+
+#+begin_src lisp
+
+#+end_src
+* An Unbalanced Binary Search Tree
