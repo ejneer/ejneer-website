@@ -1,4 +1,22 @@
+;; ox-publish ships with emacs
 (require 'ox-publish)
+
+;; below taken from systemcrafters
+;; https://systemcrafters.net/publishing-websites-with-org-mode/building-the-site/
+;; Set the package installation directory so that packages aren't stored in the
+;; ~/.emacs.d/elpa path.
+(require 'package)
+(setq package-user-dir (expand-file-name "./.packages"))
+(setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                         ("elpa" . "https://elpa.gnu.org/packages/")))
+
+;; Initialize the package system
+(package-initialize)
+(unless package-archive-contents
+  (package-refresh-contents))
+
+;; Install dependencies
+(package-install 'htmlize)
 
 (setq org-publish-project-alist
       '(("posts"
