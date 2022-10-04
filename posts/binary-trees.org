@@ -39,6 +39,7 @@ Simplest way to represent a node ~u~ is to store the at most three neighbors
 
 #+begin_src lisp
 (defclass binary-tree-node ()
+  ; setters for left/right that auto link parent?
   ((left :initarg :left
         :accessor left
         :initform 'empty)
@@ -47,23 +48,19 @@ Simplest way to represent a node ~u~ is to store the at most three neighbors
          :initform 'empty)
   (parent :initarg :parent
           :accessor parent
-          :initform 'empty)))
+          :initform 'empty)
+  (value :initarg :value
+         :accessor value
+         :initform nil)))
 
 (defmethod empty-node-p ((n binary-tree-node) slot)
   (eql (slot-value n slot) 'empty))
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::EMPTY-NODE-P (BINARY-TREE-NODE T) {700637E333}>
+: #<STANDARD-METHOD COMMON-LISP-USER::EMPTY-NODE-P (BINARY-TREE-NODE T) {70070378D3}>
 
-The binary tree itself can then be represented by a reference to its root node, ~r~:
-
-#+begin_src lisp
-(setf *r* (make-instance 'binary-tree-node))
-#+end_src
-
-#+RESULTS:
-: #<BINARY-TREE-NODE {7005770513}>
+The binary tree itself can then be represented by a reference to its root node, ~r~.
 
 We can compute the depth of a node ~u~ in a binary tree by counting the number
 of steps on the path from ~u~ to the root.
@@ -78,7 +75,7 @@ of steps on the path from ~u~ to the root.
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::DEPTH (BINARY-TREE-NODE) {700699FCB3}>
+: #<STANDARD-METHOD COMMON-LISP-USER::DEPTH (BINARY-TREE-NODE) {70070E7643}>
 
 ** Recursive Algorithms
 To compute the size of (# nodes) in a binary tree rooted at node ~u~, we
@@ -94,7 +91,7 @@ sum up these sizes, and add one:
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::SIZE (BINARY-TREE-NODE) {700703A893}>
+: #<STANDARD-METHOD COMMON-LISP-USER::SIZE (BINARY-TREE-NODE) {700715DF13}>
 
 To compute the height of a node ~u~, we can compute the height of ~u~'s two
 subtrees, take the maximum, and add one:
@@ -107,7 +104,7 @@ subtrees, take the maximum, and add one:
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::HEIGHT (BINARY-TREE-NODE) {70084CE5D3}>
+: #<STANDARD-METHOD COMMON-LISP-USER::HEIGHT (BINARY-TREE-NODE) {7007236583}>
 ** Traversing Binary Trees
 :PROPERTIES:
 :ORDERED:  t
@@ -124,7 +121,7 @@ same order as the following code:
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::TRAVERSE (BINARY-TREE-NODE) {7005D40783}>
+: #<STANDARD-METHOD COMMON-LISP-USER::TRAVERSE (BINARY-TREE-NODE) {70072AFDC3}>
 
 Using recursion this way produces very short, simple code, but it can also be
 problematic. The maximum depth of the recursion is given by the maximum depth of
@@ -213,4 +210,83 @@ aren't empty) to ~q~:
 #+begin_src lisp
 
 #+end_src
+
+#+RESULTS:
+: NIL
+
 * An Unbalanced Binary Search Tree
+A Binary Search Tree is a special kind of binary tree in which each node ~u~
+also stores a data value, ~(value u)~, from some total order. The data values in a
+binary search tree obey the binary search tree property: For a node ~u~, every
+data value stored in the subree rooted at ~(left u)~ is less than ~(value u)~ and
+every data value stored in the subree rooted at ~(right u)~ is greater than ~(value
+u)~.
+** Searching
+The binary search tree property is extremely useful because it allows us to
+quickly locate value, ~value~, in a binary search tree. To do this we start
+searching for ~value~ at the root ~r~. When examining a node ~u~, there are three
+cases:
+
+1. If ~(< (value u) x)~, then the search proceeds to ~(left u)~.
+2. If ~(> (value u) x)~, then the search proceeds to ~(right u)~.
+3. If ~(= (value u) x)~, then we have found the node containing ~x~.
+
+The search terminates when Case 3 occurs or when ~(empty-node-p u)~. In the
+former case, we found ~x~. In the latter case, we conclude that ~x~ is not in
+the binary search tree.
+
+#+begin_src lisp
+(defun find-eq (x)
+  (let ((u *r*)
+        (comp nil))
+    (loop while (and u (not (eql comp 0)))
+          do (if u (setf comp (- x (value u))))
+          do (setf u (cond ((< comp 0) (left u))
+                           ((> comp 0) (right u))
+                           (t u))))
+    (if u (value u) nil)))
+#+end_src
+
+#+RESULTS:
+: FIND-EQ
+
+Two examples of searches in a binary search tree are shown. As the second
+example shows, even if we don't find ~x~ in the tree, we still gain some
+valuable information. If we look at the last node ~u~ at which Case 1 occured,
+we see that ~(value u)~ is the smallest value in the tree that is greater than
+~x~. Similarly, the last node at which Case 2 occured contains the largest value
+in the tree that is less than ~x~. Therefore, by keeping track of the last node
+~z~ at which Case 1 occurs, a Binary Search Tree can implement the ~(find x)~
+operation that returns the smallest value stored in the tree that is greater
+than or equal to ~x~.
+
+* Testing
+I've added this section to document tests of the code I've translated from the book.
+** Test Setup
+#+begin_src lisp
+(defparameter *r* (make-instance 'binary-tree-node :value 7))
+(defparameter *n3* (make-instance 'binary-tree-node :value 3))
+(defparameter *n11* (make-instance 'binary-tree-node :value 11))
+(defparameter *n1* (make-instance 'binary-tree-node :value 1))
+(defparameter *n5* (make-instance 'binary-tree-node :value 5))
+(defparameter *n9* (make-instance 'binary-tree-node :value 9))
+(defparameter *n13* (make-instance 'binary-tree-node :value 13))
+
+(with-slots (parent left right) *r*
+  (setf parent nil)
+  (setf left *n3*)
+  (setf right *n11*))
+
+(with-slots (parent left right) *n3*
+  (setf parent *r*)
+  (setf left *n1*)
+  (setf right *n5*))
+
+(with-slots (parent left right) *n11*
+  (setf parent *r*)
+  (setf left *n9*)
+  (setf right *n13*))
+#+end_src
+
+#+RESULTS:
+: #<BINARY-TREE-NODE {7007A67103}>
