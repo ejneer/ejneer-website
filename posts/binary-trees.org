@@ -42,23 +42,26 @@ Simplest way to represent a node ~u~ is to store the at most three neighbors
   ; setters for left/right that auto link parent?
   ((left :initarg :left
         :accessor left
-        :initform 'empty)
+        :initform nil)
   (right :initarg :right
          :accessor right
-         :initform 'empty)
+         :initform nil)
   (parent :initarg :parent
           :accessor parent
-          :initform 'empty)
+          :initform nil)
   (value :initarg :value
          :accessor value
          :initform nil)))
 
-(defmethod empty-node-p ((n binary-tree-node) slot)
-  (eql (slot-value n slot) 'empty))
+; default methods
+(defmethod left (obj) nil)
+(defmethod right (obj) nil)
+(defmethod parent (obj) nil)
+(defmethod value (obj) nil)
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::EMPTY-NODE-P (BINARY-TREE-NODE T) {70070378D3}>
+: #<STANDARD-METHOD COMMON-LISP-USER::VALUE (T) {70073A6C93}>
 
 The binary tree itself can then be represented by a reference to its root node, ~r~.
 
@@ -68,14 +71,14 @@ of steps on the path from ~u~ to the root.
 #+begin_src lisp
 (defmethod depth ((u binary-tree-node))
   (let ((d 0))
-    (loop while (not (empty-node-p u 'parent))
+    (loop while (parent u)
           do (incf d)
           do (setf u (parent u)))
     d))
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::DEPTH (BINARY-TREE-NODE) {70070E7643}>
+: #<STANDARD-METHOD COMMON-LISP-USER::DEPTH (BINARY-TREE-NODE) {70055A6023}>
 
 ** Recursive Algorithms
 To compute the size of (# nodes) in a binary tree rooted at node ~u~, we
@@ -83,24 +86,23 @@ recursively compute the sizes of the two subtrees rooted at the children of ~u~,
 sum up these sizes, and add one:
 
 #+begin_src lisp
+(defmethod size (obj) 0)
 (defmethod size ((u binary-tree-node))
   "Compute the size of a binary tree rooted at U"
-  (let ((sleft (if (empty-node-p u 'left) 0 (size (left u))))
-        (sright (if (empty-node-p u 'right) 0 (size (right u)))))
-    (+ 1 sleft sright)))
+  (+ 1 (size (left u)) (size (right u))))
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::SIZE (BINARY-TREE-NODE) {700715DF13}>
+: #<STANDARD-METHOD COMMON-LISP-USER::SIZE (BINARY-TREE-NODE) {700649EF73}>
 
 To compute the height of a node ~u~, we can compute the height of ~u~'s two
 subtrees, take the maximum, and add one:
 
 #+begin_src lisp
+(defmethod height (obj) 0)
 (defmethod height ((u binary-tree-node))
-  (let ((hleft (if (empty-node-p u 'left) 0 (height (left u))))
-        (hright (if (empty-node-p u 'right) 0 (height (right u)))))
-    (+ 1 (max hleft hright))))
+  "Compute the height of a binary tree rooted at U"
+  (+ 1 (max (height (left u)) (height (right u)))))
 #+end_src
 
 #+RESULTS:
@@ -114,14 +116,15 @@ nodes in a binary tree. Each of them visits the nodes of the binary tree in the
 same order as the following code:
 
 #+begin_src lisp
+(defmethod traverse (obj) nil)
 (defmethod traverse ((u binary-tree-node))
   (print u)
-  (if (not (empty-node-p u 'left)) (traverse (left u)))
-  (if (not (empty-node-p u 'right)) (traverse (right u))))
+  (traverse (left u))
+  (traverse (right u)))
 #+end_src
 
 #+RESULTS:
-: #<STANDARD-METHOD COMMON-LISP-USER::TRAVERSE (BINARY-TREE-NODE) {70072AFDC3}>
+: #<STANDARD-METHOD COMMON-LISP-USER::TRAVERSE (BINARY-TREE-NODE) {7006B94FD3}>
 
 Using recursion this way produces very short, simple code, but it can also be
 problematic. The maximum depth of the recursion is given by the maximum depth of
@@ -140,19 +143,18 @@ If we arrive at ~u~ from ~(left u)~, then the next thing to do is to visit
 (defun traverse2 ()
   (flet ((get-next (curr prev)
                   (cond ((eql prev (parent curr))
-                         (cond ((not (empty-node-p curr 'left)) (left curr))
-                               ((not (empty-node-p curr 'right)) (right curr))
+                          (cond ((left curr) (left curr))
+                               ((right curr) (right curr))
                                (t (parent curr))))
                         ((eql prev (left curr))
-                         (if (not (empty-node-p curr 'right))
+                         (if (right curr)
                              (right curr)
                              (parent curr)))
                         (t (parent curr)))))
     (let ((u *r*)
-          (prev 'empty)
-          (next 'empty))
-      (loop while (not (eql u 'empty))
-          do (print u)
+          (prev nil)
+          (next nil))
+      (loop while u
           do (setf next (get-next u prev)
                    prev u
                    u next)))))
@@ -168,26 +170,26 @@ first time.
 
 #+begin_src lisp
 (defun size2 ()
-  (flet ((get-next (curr prev)
-                  (cond ((eql prev (parent curr))
-                           (cond ((not (empty-node-p curr 'left)) (left curr))
-                                  ((not (empty-node-p curr 'right)) (right curr))
-                                  (t (parent curr))))
-                          ((eql prev (left curr)) (if (not (empty-node-p curr 'right))
-                                                      (right curr)
-                                                      (parent curr)))
-                          (t (parent curr)))))
-    (let ((u *r*)
-          (prev 'empty)
-          (next 'empty)
-          (n 0))
-      (loop while (not (eql u 'empty))
-            do (print u)
-            if (eql prev (parent u)) do (incf n)
+  (let ((u *r*)
+        (prev nil)
+        (next nil)
+        (n 0))
+    (flet ((get-next (curr prev)
+             (cond ((eql prev (parent curr))
+                    (progn (incf n)
+                           (cond ((left curr) (left curr))
+                                 ((right curr) (right curr))
+                                 (t (parent curr)))))
+                   ((eql prev (left curr))
+                    (if (right curr)
+                        (right curr)
+                        (parent curr)))
+                   (t (parent curr)))))
+      (loop while u
             do (setf next (get-next u prev)
-                   prev u
-                   u next))
-      n)))
+                     prev u
+                     u next)))
+    n))
 #+end_src
 
 #+RESULTS:
