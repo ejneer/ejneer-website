@@ -210,11 +210,18 @@ node ~u~ from ~q~, process ~u~ and add ~(left u)~ and ~(right u)~ (if they
 aren't empty) to ~q~:
 
 #+begin_src lisp
-
+(defun bf-traverse ()
+  (let ((q (list *r*))
+        (u nil))
+    (loop while q
+          do (setf u (pop q))
+          do (if (left u) (setf q (append q (list (left u)))))
+          do (if (right u) (setf q (append q (list (right u)))))
+          )))
 #+end_src
 
 #+RESULTS:
-: NIL
+: BF-TRAVERSE
 
 * An Unbalanced Binary Search Tree
 A Binary Search Tree is a special kind of binary tree in which each node ~u~
