@@ -230,19 +230,20 @@ binary search tree obey the binary search tree property: For a node ~u~, every
 data value stored in the subree rooted at ~(left u)~ is less than ~(value u)~ and
 every data value stored in the subree rooted at ~(right u)~ is greater than ~(value
 u)~.
+
 ** Searching
 The binary search tree property is extremely useful because it allows us to
 quickly locate value, ~value~, in a binary search tree. To do this we start
 searching for ~value~ at the root ~r~. When examining a node ~u~, there are three
 cases:
 
-1. If ~(< (value u) x)~, then the search proceeds to ~(left u)~.
-2. If ~(> (value u) x)~, then the search proceeds to ~(right u)~.
-3. If ~(= (value u) x)~, then we have found the node containing ~x~.
+1. If ~(< x (value u))~, then the search proceeds to ~(left u)~.
+2. If ~(> x (value u))~, then the search proceeds to ~(right u)~.
+3. If ~(= x (value u))~, then we have found the node containing ~x~.
 
-The search terminates when Case 3 occurs or when ~(empty-node-p u)~. In the
-former case, we found ~x~. In the latter case, we conclude that ~x~ is not in
-the binary search tree.
+The search terminates when Case 3 occurs or when ~(not u)~. In the former case,
+we found ~x~. In the latter case, we conclude that ~x~ is not in the binary
+search tree.
 
 #+begin_src lisp
 (defun find-eq (x)
@@ -253,7 +254,7 @@ the binary search tree.
           do (setf u (cond ((< comp 0) (left u))
                            ((> comp 0) (right u))
                            (t u))))
-    (if u (value u) nil)))
+    (value u)))
 #+end_src
 
 #+RESULTS:
@@ -269,33 +270,109 @@ in the tree that is less than ~x~. Therefore, by keeping track of the last node
 operation that returns the smallest value stored in the tree that is greater
 than or equal to ~x~.
 
+#+begin_src lisp
+(defun find-geq (x)
+  "Find X or the smallest value greater than X in the binary tree rooted at *R*"
+  (let ((w *r*)
+        (z nil)
+        (comp nil)
+        (found nil))
+    (loop while (and w (not (eql comp 0)))
+          do (setf comp (- x (value w)))
+          do (cond ((< comp 0) (setf z w
+                                     w (left w)))
+                   ((> comp 0) (setf w (right w)))
+                   (t (setf found t))))
+    (if found (value w) (value z))))
+#+end_src
+
+#+RESULTS:
+: FIND-GEQ
+** Addition
+
+To add a new value ~x~ to a Binary Search Tree, we first search for ~x~. If we
+find it, then there is no need to insert it. Otherwise, we store ~x~ at a leaf
+child of the last node ~p~ encountered during the search for ~x~. Whether the
+new node is the left or right child of ~p~ depends on the result of comparing
+~x~ and ~(value p)~.
+
+#+begin_src lisp
+(defun find-last (x)
+  (let ((w *r*)
+        (prev nil)
+        (comp nil)
+        (found nil))
+    (loop while (and w (not (eql comp 0)))
+          do (setf comp (- x (value w))
+                   prev w)
+          do (cond ((< comp 0) (setf w (left w)))
+                   ((> comp 0) (setf w (right w)))
+                   (t (setf found t))))
+    (if found w prev)))
+#+end_src
+
+#+RESULTS:
+: FIND-LAST
+
 * Testing
 I've added this section to document tests of the code I've translated from the book.
 ** Test Setup
 #+begin_src lisp
 (defparameter *r* (make-instance 'binary-tree-node :value 7))
-(defparameter *n3* (make-instance 'binary-tree-node :value 3))
-(defparameter *n11* (make-instance 'binary-tree-node :value 11))
-(defparameter *n1* (make-instance 'binary-tree-node :value 1))
-(defparameter *n5* (make-instance 'binary-tree-node :value 5))
-(defparameter *n9* (make-instance 'binary-tree-node :value 9))
-(defparameter *n13* (make-instance 'binary-tree-node :value 13))
+(defparameter *n3* (make-instance 'binary-tree-node :value 3 :parent *r*))
+(defparameter *n11* (make-instance 'binary-tree-node :value 11 :parent *r*))
+(defparameter *n1* (make-instance 'binary-tree-node :value 1 :parent *n3*))
+(defparameter *n5* (make-instance 'binary-tree-node :value 5 :parent *n3*))
+(defparameter *n9* (make-instance 'binary-tree-node :value 9 :parent *n11*))
+(defparameter *n13* (make-instance 'binary-tree-node :value 13 :parent *n11*))
+(defparameter *n4* (make-instance 'binary-tree-node :value 4 :parent *n5*))
+(defparameter *n6* (make-instance 'binary-tree-node :value 6 :parent *n5*))
+(defparameter *n8* (make-instance 'binary-tree-node :value 8 :parent *n9*))
+(defparameter *n12* (make-instance 'binary-tree-node :value 12 :parent *n13*))
+(defparameter *n14* (make-instance 'binary-tree-node :value 14 :parent *n13*))
 
-(with-slots (parent left right) *r*
-  (setf parent nil)
+(with-slots (left right) *r*
   (setf left *n3*)
   (setf right *n11*))
 
-(with-slots (parent left right) *n3*
-  (setf parent *r*)
+(with-slots (left right) *n3*
   (setf left *n1*)
   (setf right *n5*))
 
-(with-slots (parent left right) *n11*
-  (setf parent *r*)
+(with-slots (left right) *n11*
   (setf left *n9*)
   (setf right *n13*))
+
+(with-slots (left right) *n5*
+  (setf left *n4*)
+  (setf right *n6*))
+
+(setf (left *n9*) *n8*)
+
+(with-slots (left right) *n13*
+  (setf left *n12*)
+  (setf right *n14*))
 #+end_src
 
 #+RESULTS:
-: #<BINARY-TREE-NODE {7007A67103}>
+: #<BINARY-TREE-NODE {7007D81DB3}>
+** Test find-last
+
+Since a node with value 6 is already in the tree, that node should be returned.
+
+#+begin_src lisp
+(eql (find-last 6) *n6*)
+#+end_src
+
+#+RESULTS:
+: T
+
+There is no node with value 10, *n9* would be the last node looked at before
+exhausting the search.
+
+#+begin_src lisp
+(eql (find-last 10) *n9*)
+#+end_src
+
+#+RESULTS:
+: T
