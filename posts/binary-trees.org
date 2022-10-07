@@ -314,49 +314,161 @@ new node is the left or right child of ~p~ depends on the result of comparing
 #+RESULTS:
 : FIND-LAST
 
-* Testing
-I've added this section to document tests of the code I've translated from the book.
-** Test Setup
 #+begin_src lisp
-(defparameter *r* (make-instance 'binary-tree-node :value 7))
-(defparameter *n3* (make-instance 'binary-tree-node :value 3 :parent *r*))
-(defparameter *n11* (make-instance 'binary-tree-node :value 11 :parent *r*))
-(defparameter *n1* (make-instance 'binary-tree-node :value 1 :parent *n3*))
-(defparameter *n5* (make-instance 'binary-tree-node :value 5 :parent *n3*))
-(defparameter *n9* (make-instance 'binary-tree-node :value 9 :parent *n11*))
-(defparameter *n13* (make-instance 'binary-tree-node :value 13 :parent *n11*))
-(defparameter *n4* (make-instance 'binary-tree-node :value 4 :parent *n5*))
-(defparameter *n6* (make-instance 'binary-tree-node :value 6 :parent *n5*))
-(defparameter *n8* (make-instance 'binary-tree-node :value 8 :parent *n9*))
-(defparameter *n12* (make-instance 'binary-tree-node :value 12 :parent *n13*))
-(defparameter *n14* (make-instance 'binary-tree-node :value 14 :parent *n13*))
-
-(with-slots (left right) *r*
-  (setf left *n3*)
-  (setf right *n11*))
-
-(with-slots (left right) *n3*
-  (setf left *n1*)
-  (setf right *n5*))
-
-(with-slots (left right) *n11*
-  (setf left *n9*)
-  (setf right *n13*))
-
-(with-slots (left right) *n5*
-  (setf left *n4*)
-  (setf right *n6*))
-
-(setf (left *n9*) *n8*)
-
-(with-slots (left right) *n13*
-  (setf left *n12*)
-  (setf right *n14*))
+(defun add-child (p u)
+  "Add U as a child of P"
+  (if (not p)
+      ; inserting into empty tree
+      (setf *r* u)
+      (let ((comp (- (value u) (value p)))
+            (found nil))
+        (cond ((< comp 0) (setf (left p) u))
+              ((> comp 0) (setf (right p) u))
+              ; U is already in the tree
+              (t (setf found t)))
+        (if (not found) (setf (parent u) p))
+        (not found))))
 #+end_src
 
 #+RESULTS:
-: #<BINARY-TREE-NODE {7007D81DB3}>
-** Test find-last
+: ADD-CHILD
+
+#+begin_src lisp
+(defun add (x)
+  "Add a new node to *R* with value of X if not already in *R*"
+  (let ((p (find-last x))
+        (nx (make-instance 'binary-tree-node :value x)))
+    (add-child p nx)))
+#+end_src
+
+#+RESULTS:
+: ADD
+
+The most time-consuming part of this process is the initial search for ~x~,
+which takes an amount of time proportional to the height of the newly added node
+~u~. In the worst case, this is equal to the height of the binary search tree.
+
+** Removal
+:PROPERTIES:
+:ORDERED:  t
+:END:
+Deleting a value stored in a node ~u~ of a binary search tree is a little more
+difficult. If ~u~ is a leaf, then we can just detach ~u~ from its parent. Even
+better: if ~u~ has only one child, then we can splice ~u~ from the tree by
+having ~(parent u)~ adopt ~u~'s child.
+
+#+begin_src lisp
+(defun splice (u)
+  (let ((s nil)
+        (p nil))
+    (setf s (if (left u) (left u) (right u)))
+    (if (eql u *r*)
+        (setf *r* s)
+        (progn
+          (setf p (parent u))
+          (if (eql (left p) u)
+              (setf (left p) s)
+              (setf (right p) s))))
+    (if s (setf (parent s) p))))
+#+end_src
+
+#+RESULTS:
+: SPLICE
+
+Things get tricky, though, when ~u~ has two children. In this case, the simplest
+thing to do is to find a node ~w~ that has less than two children and such that
+~(value w)~ can replace ~(value u)~. To maintain the binary search tree
+property, ~(value w)~ should be close to the value of ~(value u)~. For example,
+choosing ~w~ such that ~(value w)~ is the smallest value greater than ~(value
+u)~ will work. Finding the node ~w~ is easy; it is the smallest value in the
+subtree rooted at ~(right u)~. This node can be easily removed because it has no
+left child.
+
+#+begin_src lisp
+(defun remove-node (u)
+  (if (or (not (left u)) (not (right u)))
+      (splice u)
+      (let ((w (right u)))
+        ; get the smallest value in the subtree to the right of u
+        (loop while (left w) do (setf w (left w)))
+        (setf (value u) (value w))
+        (splice w))))
+#+end_src
+
+#+RESULTS:
+: REMOVE-NODE
+** Summary
+
+The ~(find-geq x)~, ~(add x)~, and ~(remove-node x)~ operations in a binary
+search tree each involved following a path from the root of the tree to some
+node in the tree. Without knowing more about the shape of the tree it is
+difficult to say much about the length of this path, except that it is less than
+~n~, the number of nodes in the tree. The followning (unimpressive) theorem
+summarizes the performance of the binary search tree data structure:
+
+#+begin_example
+Binary search tree implements the SSet interface and supports the operations
+add, remove, and find in O(n) time per operation.
+#+end_example
+
+Theorem ## compares poorly with theorem ## which shows that the ~SkiplistSSet~
+structure can implement the ~SSet~ interface with O(log n) expected time per
+operation. The problem iwht the binary search tree structure is that it can
+become unbalanced. Instead of looking like the tree in Figure ## it can look
+like a long chain of nodes, all but the last having exactly one child.
+
+There are a number of ways of avoiding unbalanced binary search trees, all of
+which lead to data structures that have O(log n) time operations. In Chapter 7
+we show how O(log n) expected time operations can be achieved with
+randomization. In Chapter 8 we show how O(log n) amortized time operations can
+be achieved with partial rebuilding operations. In Chapter 9 we show how
+O(log n) worst-case time operations can be achieved by simulating a tree that is
+not binary: one in which nodes can have up to four children.
+
+* Testing
+I've added this section to document tests of the code I've translated from the book.
+** Setup
+#+begin_src lisp
+(defun test-setup ()
+  (defparameter *r*   (make-instance 'binary-tree-node :value 7))
+  (defparameter *n3*  (make-instance 'binary-tree-node :value 3  :parent *r*))
+  (defparameter *n11* (make-instance 'binary-tree-node :value 11 :parent *r*))
+  (defparameter *n1*  (make-instance 'binary-tree-node :value 1  :parent *n3*))
+  (defparameter *n5*  (make-instance 'binary-tree-node :value 5  :parent *n3*))
+  (defparameter *n9*  (make-instance 'binary-tree-node :value 9  :parent *n11*))
+  (defparameter *n13* (make-instance 'binary-tree-node :value 13 :parent *n11*))
+  (defparameter *n4*  (make-instance 'binary-tree-node :value 4  :parent *n5*))
+  (defparameter *n6*  (make-instance 'binary-tree-node :value 6  :parent *n5*))
+  (defparameter *n8*  (make-instance 'binary-tree-node :value 8  :parent *n9*))
+  (defparameter *n12* (make-instance 'binary-tree-node :value 12 :parent *n13*))
+  (defparameter *n14* (make-instance 'binary-tree-node :value 14 :parent *n13*))
+
+  (with-slots (left right) *r*
+    (setf left *n3*)
+    (setf right *n11*))
+
+  (with-slots (left right) *n3*
+    (setf left *n1*)
+    (setf right *n5*))
+
+  (with-slots (left right) *n11*
+    (setf left *n9*)
+    (setf right *n13*))
+
+  (with-slots (left right) *n5*
+    (setf left *n4*)
+    (setf right *n6*))
+
+  (setf (left *n9*) *n8*)
+
+  (with-slots (left right) *n13*
+    (setf left *n12*)
+    (setf right *n14*)) )
+#+end_src
+
+#+RESULTS:
+: TEST-SETUP
+** Test ~find-last~
 
 Since a node with value 6 is already in the tree, that node should be returned.
 
@@ -372,6 +484,29 @@ exhausting the search.
 
 #+begin_src lisp
 (eql (find-last 10) *n9*)
+#+end_src
+
+#+RESULTS:
+: T
+** Test ~splice~
+
+Splicing ~*n4*~ should make ~(left *n5*)~ nil.
+
+#+begin_src lisp
+(splice *n4*)
+(not (left *n5*))
+#+end_src
+
+#+RESULTS:
+: T
+** Test ~remove-node~
+
+Removing ~*n11*~ should update the value of ~*n11*~ to be 12 and remove the left child of ~*n13*~.
+
+#+begin_src lisp
+(test-setup)
+(remove-node *n11*)
+(and (eql (value *n11*) 12) (not (left *n13*)))
 #+end_src
 
 #+RESULTS:
