@@ -125,7 +125,7 @@ subtrees, take the maximum, and add one:
 : #<STANDARD-METHOD COMMON-LISP-USER::HEIGHT (BINARY-TREE-NODE) {7007236583}>
 *** Tests
 **** Test ~size~
-#+begin_src lisp
+#+begin_src lisp :exports both
 (test-setup)
 (eql 12 (size *r*))
 #+end_src
@@ -133,7 +133,7 @@ subtrees, take the maximum, and add one:
 #+RESULTS:
 : T
 **** Test ~height~
-#+begin_src lisp
+#+begin_src lisp :exports both
 (test-setup)
 (eql 4 (height *r*))
 #+end_src
@@ -258,7 +258,7 @@ aren't empty) to ~q~:
 : BF-TRAVERSE
 *** Tests
 **** Test ~size2~
-#+begin_src lisp
+#+begin_src lisp :exports both
 (test-setup)
 (eql 12 (size2))
 #+end_src
@@ -444,7 +444,7 @@ exhausting the search.
 **** Test ~add~
 
 10 isn't in the tree, and should be to the right of 9 when added
-#+begin_src lisp
+#+begin_src lisp  :exports both
 (test-setup)
 (add 10)
 (eql (value (right *n9*)) 10)
@@ -558,7 +558,7 @@ not binary: one in which nodes can have up to four children.
 ** Testing
 I've added this section to document tests of the code I've translated from the book.
 *** Setup
-#+begin_src lisp
+#+begin_src lisp :exports both
 (defun test-setup ()
   "Helper function to rebuild the tree on demand"
   (defparameter *r*   (make-instance 'binary-tree-node :value 7))
