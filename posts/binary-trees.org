@@ -123,24 +123,6 @@ subtrees, take the maximum, and add one:
 
 #+RESULTS:
 : #<STANDARD-METHOD COMMON-LISP-USER::HEIGHT (BINARY-TREE-NODE) {7007236583}>
-*** Tests
-**** Test ~size~
-#+begin_src lisp :exports both
-(test-setup)
-(eql 12 (size *r*))
-#+end_src
-
-#+RESULTS:
-: T
-**** Test ~height~
-#+begin_src lisp :exports both
-(test-setup)
-(eql 4 (height *r*))
-#+end_src
-
-#+RESULTS:
-: T
-
 ** Traversing Binary Trees
 :PROPERTIES:
 :ORDERED:  t
@@ -256,16 +238,6 @@ aren't empty) to ~q~:
 
 #+RESULTS:
 : BF-TRAVERSE
-*** Tests
-**** Test ~size2~
-#+begin_src lisp :exports both
-(test-setup)
-(eql 12 (size2))
-#+end_src
-
-#+RESULTS:
-: T
-
 * An Unbalanced Binary Search Tree
 A Binary Search Tree is a special kind of binary tree in which each node ~u~
 also stores a data value, ~(value u)~, from some total order. The data values in a
@@ -332,34 +304,6 @@ than or equal to ~x~.
 #+RESULTS:
 : FIND-GEQ
 
-*** Tests
-**** Test ~find-eq~
-6 is in the tree, so it should be found.
-#+begin_src lisp :exports both
-(find-eq 6)
-#+end_src
-
-#+RESULTS:
-: 6
-
-10 is not in the tree, so nothing should be found
-#+begin_src lisp :exports both
-(find-eq 10)
-#+end_src
-
-#+RESULTS:
-: NIL
-
-**** Test ~find-geq~
-Since 10 isn't in the tree, the next largest value (11) should be returned.
-
-#+begin_src lisp :exports both
-(find-geq 10)
-#+end_src
-
-#+RESULTS:
-: 11
-
 ** Addition
 
 To add a new value ~x~ to a Binary Search Tree, we first search for ~x~. If we
@@ -419,40 +363,6 @@ new node is the left or right child of ~p~ depends on the result of comparing
 The most time-consuming part of this process is the initial search for ~x~,
 which takes an amount of time proportional to the height of the newly added node
 ~u~. In the worst case, this is equal to the height of the binary search tree.
-*** Tests
-**** Test ~find-last~
-
-Since a node with value 6 is already in the tree, that node should be returned.
-
-#+begin_src lisp :exports both
-(eql (find-last 6) *n6*)
-#+end_src
-
-#+RESULTS:
-: T
-
-There is no node with value 10, ~*n9*~ would be the last node looked at before
-exhausting the search.
-
-#+begin_src lisp :exports both
-(eql (find-last 10) *n9*)
-#+end_src
-
-#+RESULTS:
-: T
-
-**** Test ~add~
-
-10 isn't in the tree, and should be to the right of 9 when added
-#+begin_src lisp  :exports both
-(test-setup)
-(add 10)
-(eql (value (right *n9*)) 10)
-#+end_src
-
-#+RESULTS:
-: T
-
 ** Removal
 :PROPERTIES:
 :ORDERED:  t
@@ -502,31 +412,6 @@ left child.
 
 #+RESULTS:
 : REMOVE-NODE
-*** Tests
-**** Test ~splice~
-
-Splicing ~*n4*~ should make ~(left *n5*)~ nil.
-
-#+begin_src lisp :exports both
-(splice *n4*)
-(not (left *n5*))
-#+end_src
-
-#+RESULTS:
-: T
-**** Test ~remove-node~
-
-Removing ~*n11*~ should update the value of ~*n11*~ to be 12 and remove the left child of ~*n13*~.
-
-#+begin_src lisp :exports both
-(test-setup)
-(remove-node *n11*)
-(and (eql (value *n11*) 12) (not (left *n13*)))
-#+end_src
-
-#+RESULTS:
-: T
-
 ** Summary
 
 The ~(find-geq x)~, ~(add x)~, and ~(remove-node x)~ operations in a binary
@@ -599,3 +484,109 @@ I've added this section to document tests of the code I've translated from the b
 
 #+RESULTS:
 : TEST-SETUP
+*** Test ~size~
+#+begin_src lisp :exports both
+(test-setup)
+(eql 12 (size *r*))
+#+end_src
+
+#+RESULTS:
+: T
+*** Test ~height~
+#+begin_src lisp :exports both
+(test-setup)
+(eql 4 (height *r*))
+#+end_src
+
+#+RESULTS:
+: T
+
+*** Test ~size2~
+#+begin_src lisp :exports both
+(test-setup)
+(eql 12 (size2))
+#+end_src
+
+#+RESULTS:
+: T
+*** Test ~find-eq~
+6 is in the tree, so it should be found.
+#+begin_src lisp :exports both
+(find-eq 6)
+#+end_src
+
+#+RESULTS:
+: 6
+
+10 is not in the tree, so nothing should be found
+#+begin_src lisp :exports both
+(find-eq 10)
+#+end_src
+
+#+RESULTS:
+: NIL
+
+*** Test ~find-geq~
+Since 10 isn't in the tree, the next largest value (11) should be returned.
+
+#+begin_src lisp :exports both
+(find-geq 10)
+#+end_src
+
+#+RESULTS:
+: 11
+*** Test ~find-last~
+
+Since a node with value 6 is already in the tree, that node should be returned.
+
+#+begin_src lisp :exports both
+(eql (find-last 6) *n6*)
+#+end_src
+
+#+RESULTS:
+: T
+
+There is no node with value 10, ~*n9*~ would be the last node looked at before
+exhausting the search.
+
+#+begin_src lisp :exports both
+(eql (find-last 10) *n9*)
+#+end_src
+
+#+RESULTS:
+: T
+
+*** Test ~add~
+
+10 isn't in the tree, and should be to the right of 9 when added
+#+begin_src lisp  :exports both
+(test-setup)
+(add 10)
+(eql (value (right *n9*)) 10)
+#+end_src
+
+#+RESULTS:
+: T
+*** Test ~splice~
+
+Splicing ~*n4*~ should make ~(left *n5*)~ nil.
+
+#+begin_src lisp :exports both
+(splice *n4*)
+(not (left *n5*))
+#+end_src
+
+#+RESULTS:
+: T
+*** Test ~remove-node~
+
+Removing ~*n11*~ should update the value of ~*n11*~ to be 12 and remove the left child of ~*n13*~.
+
+#+begin_src lisp :exports both
+(test-setup)
+(remove-node *n11*)
+(and (eql (value *n11*) 12) (not (left *n13*)))
+#+end_src
+
+#+RESULTS:
+: T
