@@ -1,0 +1,126 @@
+#+title: Trying out cpp11 and org-babel
+#+property: header-args:R  :session *R*
+#+property: header-args    :exports both
+
+* Trying out CPP11 and org-babel
+** Setup
+*** Compiling src blocks
+My initial thought was to have C++ source blocks that can be normally executed
+with babel, making functions defined in them available to R through cpp11.
+Muddling through the errors I encountered, I discovered a couple things I needed
+to do:
+
+1. Tell the compiler where the ~cpp11~ R library's headers were.
+
+   ~cpp11~ defines all of its functionality in header files, which come with the
+   R library when it is installed. These live in the standard location for
+   "extra" stuff required in an R packakge, the ~inst/~ directory, in an
+   ~include/~ subfolder. This directory is unpacked to the top level library
+   directory on installation
+
+   #+begin_src R :results output
+     list.files(system.file("include", package = "cpp11"), recursive = T)
+   #+end_src
+
+   #+RESULTS:
+   #+begin_example
+    [1] "cpp11.hpp"                  "cpp11/altrep.hpp"
+    [3] "cpp11/as.hpp"               "cpp11/attribute_proxy.hpp"
+    [5] "cpp11/data_frame.hpp"       "cpp11/declarations.hpp"
+    [7] "cpp11/doubles.hpp"          "cpp11/environment.hpp"
+    [9] "cpp11/external_pointer.hpp" "cpp11/function.hpp"
+   [11] "cpp11/integers.hpp"         "cpp11/list_of.hpp"
+   [13] "cpp11/list.hpp"             "cpp11/logicals.hpp"
+   [15] "cpp11/matrix.hpp"           "cpp11/named_arg.hpp"
+   [17] "cpp11/protect.hpp"          "cpp11/r_bool.hpp"
+   [19] "cpp11/r_string.hpp"         "cpp11/r_vector.hpp"
+   [21] "cpp11/R.hpp"                "cpp11/raws.hpp"
+   [23] "cpp11/sexp.hpp"             "cpp11/strings.hpp"
+   [25] "fmt/core.h"                 "fmt/format-inl.h"
+   [27] "fmt/format.h"
+   #+end_example
+
+   These files must be on the include path of the compiler. The include path can
+   be modified using the ~:flags~ argument of the babel src block.  On my
+   machine this looked like
+
+   #+begin_example
+     :flags -I/opt/homebrew/Cellar/r/4.2.1_3 -I/Users/ejneer/Library/R/arm64/4.2/library/cpp11/include
+   #+end_example
+
+2. Stop babel from wrapping the C++ in a main method.
+
+   Since I only intend define functions in C++ and use them from R, I don't need
+   a main method. If there is not main method defined in the C++ src blocks,
+   default babel behavior is to wrap the block in a simple main method. From the
+   docs:
+
+   #+begin_quote
+     If a main method is not present in a code block then the entire block is wrapped in a trivial main function call.
+   #+end_quote
+
+   This behavior can be turned off with another header argument, ~:main no~.
+
+   With these settings in place, I no longer encountered ~cpp11~ or babel
+   related errors. I still encountered other errors that I think were related to
+   using standard library functions, and ultimately prevented me from compiling
+   the src blocks like I wanted. I don't know if this is actually possible. An
+   example error is below.
+
+    #+begin_example
+      /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_ctype.h:128:1: error: expected unqualified-id
+      __BEGIN_DECLS
+      ^
+    #+end_example
+
+   I settled on another method to integrate cpp11 and babel that feels pretty
+   natural to me.
+
+*** Tangling C++ blocks and using ~cpp_source~
+
+It is possible to "tangle" src blocks, meaning the code in the block is
+extracted and put in to a file that you can optionally name. This is useful
+since the ~cpp11~ library provides a way to "source" c++ files, much in the same
+way you can source an R script. The workflow then comprises two steps:
+
+1. Tangle the C++ src block
+2. Source the C++ file in an R block with ~cpp_source~
+
+By default, the tangled file is named the same as the org file, using a file
+extension appropriate for the src block type, here .cpp. Additionally, the
+~:eval~ header arg can be set to ~never-export~ so babel does not try to execute
+the src block on export, which would error (as above) for C++ blocks. An example
+is taken from the ~cpp11~ docs to show this workflow.
+
+Tangle this block:
+
+#+begin_src C++ :main no :results none :eval never-export :tangle yes
+  #include "cpp11/doubles.hpp"
+  using namespace cpp11;
+
+  [[cpp11::register]]
+  doubles pdist_cpp(double x, doubles ys) {
+    int n = ys.size();
+    writable::doubles out(n);
+    for(int i = 0; i < n; ++i) {
+      out[i] = sqrt(pow(ys[i] - x, 2.0));
+    }
+    return out;
+  }
+#+end_src
+
+Source it here:
+
+#+begin_src R :results value
+  library(cpp11)
+  cpp_source("trying_out_cpp11_babel.cpp")
+
+  pdist_cpp(6, runif(5))
+#+end_src
+
+#+RESULTS:
+| 5.93108451506123 |
+| 5.69599958159961 |
+|  5.3355521701742 |
+| 5.36576539138332 |
+| 5.25973593001254 |
