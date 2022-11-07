@@ -195,7 +195,7 @@ Traversing ~g~ in a breadth-first manner would happen as follows:
 
 Using ~naive-queue~ to traverse the graph:
 
-#+begin_src lisp :exports both
+#+begin_src lisp
 (defparameter work-list-queue (make-instance 'naive-queue))
 (traverse-graph g one work-list-queue)
 #+end_src
@@ -238,7 +238,7 @@ Traversing ~g~ in a depth-first manner would happen as follows:
 
 Using ~naive-stack~ to traverse the graph:
 
-#+begin_src lisp :exports both
+#+begin_src lisp
 (defparameter work-list-stack (make-instance 'naive-stack))
 (traverse-graph g one work-list-stack)
 #+end_src
