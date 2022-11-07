@@ -17,6 +17,7 @@
 
 ;; Install dependencies
 (package-install 'htmlize)
+(require 'htmlize)
 
 (setq org-publish-project-alist
       '(("posts"
@@ -34,10 +35,10 @@
           :htmlized-source t)
 
         ("img"
-         :base-directory "posts/img/"
+         :base-directory "posts/"
          :base-extension "svg"
-         :publishing-directory "public/img/"
-         :recurse t
+         :publishing-directory "public/"
+         :recursive t
          :publishing-function org-publish-attachment)
 
         ("all" :components ("posts" "img"))))
