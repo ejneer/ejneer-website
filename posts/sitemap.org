@@ -1,6 +1,7 @@
 #+TITLE: Sitemap
 
 - [[file:add_two_numbers.org][Add Two Numbers]]
+- [[file:bills_of_material.org][Bills of Material]]
 - [[file:undirected-graph-traversal.org][Undirected Graph Traversal]]
 - cpp11
   - [[file:cpp11/trying_out_cpp11_babel.org][Trying out cpp11 and org-babel]]
