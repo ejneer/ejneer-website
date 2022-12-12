@@ -150,13 +150,13 @@ recursive_bom(Component, Level) AS (
 	ORDER BY recursive_bom.level + 1 DESC
 )
 -- Add leading periods to help visualize bom depth
-SELECT level, substr('..........', 1, level * 3) || Component AS Component FROM recursive_bom
+SELECT level, printf('%.*c', level * 3, '.') || Component AS Component  FROM recursive_bom
 #+end_src
 
 #+RESULTS:
 | Level | Component       |
 |-------+-----------------|
-|     0 | Upper Barrel    |
+|     0 | .Upper Barrel   |
 |     1 | ...Clip         |
 |     2 | ......Steel     |
 |     1 | ...Sleeve       |
