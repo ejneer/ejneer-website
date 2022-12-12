@@ -5,7 +5,7 @@
 #+author: Eric Neer
 
 
-#+begin_src R
+#+begin_src R :results none
 library(DiagrammeR)
 library(RSQLite)
 
@@ -13,29 +13,26 @@ if (file.exists("bom.db")) file.remove("bom.db")
 con <- DBI::dbConnect(RSQLite::SQLite(), "bom.db")
 
 bom <- tibble::tribble(
-  ~Component, ~Parent, ~Quantity,
-  "Pen", NA, 1,
-  "Lower Pen", "Pen", 1,
-  "Upper Barrel", "Pen", 1,
-  "Ink", "Pen", 1,
-  "Inner", "Lower Pen", 2,
-  "Point", "Lower Pen", 1,
-  "Outer", "Lower Pen", 2,
-  "Sleeve", "Upper Barrel", 1,
-  "Clip", "Upper Barrel", 2,
-  "Tubing", "Inner", 5,
-  "Tubing", "Outer", 3,
-  "Top", "Sleeve", 1,
-  "Tube", "Sleeve", 1,
-  "Steel", "Clip", 4,
-  "Tubing", "Tube", 2
+  ~Component,       ~Parent,    ~Quantity,
+  "Pen",            NA,             1,
+  "Lower Pen",      "Pen",          1,
+  "Upper Barrel",   "Pen",          1,
+  "Ink",            "Pen",          1,
+  "Inner",          "Lower Pen",    2,
+  "Point",          "Lower Pen",    1,
+  "Outer",          "Lower Pen",    2,
+  "Sleeve",         "Upper Barrel", 1,
+  "Clip",           "Upper Barrel", 2,
+  "Tubing",         "Inner",        5,
+  "Tubing",         "Outer",        3,
+  "Top",            "Sleeve",       1,
+  "Tube",           "Sleeve",       1,
+  "Steel",          "Clip",         4,
+  "Tubing",         "Tube",         2
 )
 
 DBI::dbWriteTable(con, "bom", bom)
 #+end_src
-
-#+RESULTS:
-: TRUE
 
 ** Description
 In manufacturing, a bill of materials (BOM) defines all of the items required to
@@ -107,7 +104,7 @@ SELECT * FROM bom
 | Ink          | Pen          |      1.0 |
 | Inner        | Lower Pen    |      2.0 |
 | Point        | Lower Pen    |      1.0 |
-| Outer        | Lnower Pen   |      2.0 |
+| Outer        | Lower Pen    |      2.0 |
 | Sleeve       | Upper Barrel |      1.0 |
 | Clip         | Upper Barrel |      2.0 |
 | Tubing       | Inner        |      5.0 |
@@ -196,13 +193,14 @@ GROUP BY Component
 | Ink          |                1.0 |
 | Inner        |                2.0 |
 | Lower Pen    |                1.0 |
+| Outer        |                2.0 |
 | Pen          |                  1 |
 | Point        |                1.0 |
 | Sleeve       |                1.0 |
 | Steel        |                8.0 |
 | Top          |                1.0 |
 | Tube         |                1.0 |
-| Tubing       |               12.0 |
+| Tubing       |               18.0 |
 | Upper Barrel |                1.0 |
 
 Thus, in order to build 1 Pen assembly, a total of 18 Tubing is required. To
