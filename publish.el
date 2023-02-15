@@ -74,8 +74,9 @@
              (img ((src . "/static/pic.jpeg")
                    (width . "150")
                    (style . "border-radius: 50%;"))))
-          (p ((class . "lead"))
-             "Data Scientist & Engineer")
+          (p ((class . "lead")) "Data Scientist & Engineer")
+          (p ((class . "lead")) "Mercury Insurance")
+          (br)
           ,(ejneer/site-sidebar-nav-link "fab fa-github" "https://github.com/ejneer" "GitHub")
           ,(ejneer/site-sidebar-nav-link "fab fa-linkedin" "https://www.linkedin.com/in/eric-neer/" "LinkedIn")
           ,(ejneer/site-footer info)))))
@@ -119,7 +120,7 @@
       (list
        (list "ejneer:main"
              :recursive t
-             :base-directory (expand-file-name "posts/")
+             :base-directory (expand-file-name "content/")
              :publishing-function 'ejneer/org-html-publish-to-html
              :publishing-directory (expand-file-name "public/")
              :with-author nil
@@ -130,7 +131,7 @@
 
        (list "ejneer:static"
              :recursive t
-             :base-directory (expand-file-name "posts/")
+             :base-directory (expand-file-name "content/")
              :publishing-directory (expand-file-name "public/")
              :publishing-function 'org-publish-attachment
              :base-extension "\\(gif\\|svg\\|css\\|jpeg\\)")
