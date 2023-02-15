@@ -1,0 +1,47 @@
+body {
+    margin: 40px auto;
+    font-family: "PT Sans", Helvetica, Arial, sans-serif;
+    line-height: 1.5;
+}
+
+.src {
+    background: rgb(240,240,240);
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 5px 5px 5px lightgrey;
+    overflow-x: auto;
+}
+
+.content {
+    padding: 2em 3em 0;
+    margin-left: 25%;
+    max-width: 800px;
+}
+
+.header {
+    margin: 80% 2em 0;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    background: rgb(240,240,240);
+    text-align: left;
+}
+
+.footer {
+    text-align: center;
+}
+
+.figure p {
+    text-align: center;
+}
+
+.lead {
+    font-size: 1.25rem;
+}
+
+.sidebar-nav-item {
+    font-size: 20px;
+}
