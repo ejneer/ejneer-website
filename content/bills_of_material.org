@@ -1,12 +1,12 @@
 #+title: Bills of Material
+#+author: Eric Neer
+#+date: 2020-07-25
 #+property: header-args :exports both
 #+property: header-args:R  :session *R*
 #+property: header-args:sqlite :db bom.db :colnames yes
-#+author: Eric Neer
 
 
-#+begin_src R :results none
-library(DiagrammeR)
+#+begin_src R :results none :exports none
 library(RSQLite)
 
 if (file.exists("bom.db")) file.remove("bom.db")
@@ -34,48 +34,51 @@ bom <- tibble::tribble(
 DBI::dbWriteTable(con, "bom", bom)
 #+end_src
 
-** Description
+* Bills of Material
+
 In manufacturing, a bill of materials (BOM) defines all of the items required to
 produce a good. Often times this consists of raw materials (e.g. steel,
 aluminum) that are transformed or other components that are assembled to make
 the finished product. It may also contain ancillary items used during
 manufacturing, such as tooling or consumable chemicals.
 
-#+begin_src dot :file img/bom.svg :cmdline -Tsvg :results file :exports results
-digraph {
-  node [shape="box"]
-  edge [arrowhead="none"]
-  LP [label="Lower Pen"]
-  UB [label="Upper Barrel"]
-  T1 [label="Tubing"]
-  T2 [label="Tubing"]
+#+begin_src dot :file img/bom-graph.svg :cmdline -Tsvg :results file :exports results
+  digraph {
+    node [shape="box"]
+    edge [arrowhead="none"]
+    LP [label="Lower Pen"]
+    UB [label="Upper Barrel"]
+    T1 [label="Tubing"]
+    T2 [label="Tubing"]
 
-  Pen -> {LP Ink UB}
-  LP -> {Inner Point Outer}
-  Inner -> T1
-  Outer -> T2
+    Pen -> {LP Ink UB}
+    LP -> {Inner Point Outer}
+    Inner -> T1
+    Outer -> T2
 
-  UB -> {Sleeve Clip}
-  Sleeve -> {Top Tube}
-  Tube -> Tubing
-  Clip -> Steel
+    UB -> {Sleeve Clip}
+    Sleeve -> {Top Tube}
+    Tube -> Tubing
+    Clip -> Steel
 
-  node [shape="plaintext"]
-  L0 [label="Level 0"]
-  L1 [label="Level 1"]
-  L2 [label="Level 2"]
-  L3 [label="Level 3"]
-  L4 [label="Level 4"]
+    node [shape="plaintext"]
+    L0 [label="Level 0"]
+    L1 [label="Level 1"]
+    L2 [label="Level 2"]
+    L3 [label="Level 3"]
+    L4 [label="Level 4"]
 
-  subgraph labels {
-    rankdir="TB"
-    L0 -> L1 -> L2 -> L3 -> L4 [style="invis"]
+    subgraph labels {
+      rankdir="TB"
+      L0 -> L1 -> L2 -> L3 -> L4 [style="invis"]
+    }
   }
-}
 #+end_src
 
+#+caption: Hypothetical multi-level bill of materials for a pen. (Lunn and Neff 1992)
 #+RESULTS:
-[[file:img/bom.svg]]
+[[file:img/bom-graph.svg]]
+
 
 ** Data Structures
 Looking at the bill of materials depiction above, it is obvious that a BOM is
