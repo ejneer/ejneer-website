@@ -1,69 +1,3 @@
-#+title: Mergesort
-#+author: Eric Neer
-#+date: 2020-05-24
-#+property: doctype post
-#+property: header-args :exports both
-#+property: header-args:R  :session *R*
-
-#+begin_src R
-library(tidyverse)
-library(ggplot2)
-library(gganimate)
-library(DiagrammeR)
-library(reticulate)
-
-set.seed(0)
-#+end_src
-
-#+RESULTS:
-
-#+begin_src dot :file img/mergesort.svg :cmdline -Tsvg :results file :exports results
-digraph mergesort {
-
-  OR2 [label="OR"];
-
-  SORTING -> {SOR TING}
-  SOR -> {S OR}
-  TING -> {TI NG}
-  OR -> {O R}
-  TI -> {T I}
-  NG -> {N G}
-
-  {O R} -> OR2
-  {S OR2} -> ORS
-  {T I} -> IT
-  {N G} -> GN
-  {IT GN} -> GINT
-  {ORS GINT} -> GINORST
-
-  {
-    # ensure the individual letters of sorting appear on the same line rank = "same";
-    S -> O -> R -> T -> I -> N -> G [style="invis"]
-  }
-}
-#+end_src
-
-#+RESULTS:
-[[file:img/mergesort.svg]]
-
-* Description
-Mergesort is a divide-and-conquer sorting technique, wherein a larger problem is divided and the resulting sub-problem is solved.
-The general mergesort strategy is as follows:
-
-1. Recursively divide the items to be sorted until no further division is possible.
-1. Merge the two halves of the prior division, putting elements in order as the halves are merged.
-   This is the step where all of the heavy lifting is done.
-
-Looking at the graph above, the top half shows the division of the word "SORTING" until there are only individual letters left.
-The letters (length-1 arrays) are subsequently merged *in order* into larger arrays.
-Merging continues until the original inputs are realized, now in sorted order.
-
-It should be noted that not all division and merging are done in parallel, as the graph may suggest (at least for the [implementation](#implementation) presented here).
-In reality, elements on the left side of the graph will be divided and merged prior to those on the right.
-This is depicted in the animation below, where left-most elements are put in order prior to those on their right.
-The highlighted elements for each iteration show how the algorithm proceeds in a left-to-right fashion.
-
-#+begin_src python :eval never-export :tangle yes
 import pandas as pd
 
 class MergeSorter(object):
@@ -177,45 +111,7 @@ class MergeSorter(object):
                 }
             )
         self._iteration_count += 1
-#+end_src
 
-#+begin_src R :file img/mergesort.gif :results output graphics file
-source_python("mergesort.py")
-sorter <- py$MergeSorter(runif(50))
-sorter$sort()
-
-p <- sorter$snapshots %>%
-  mutate(sorting = left | right) %>%
-  ggplot() +
-  aes(x = position, y = value, fill = sorting) +
-  geom_col() +
-  transition_manual(iteration) +
-  theme_void() +
-  theme(legend.position = "none") +
-  ggtitle("Mergesort - Iteration #{current_frame}")
-
-anim_save(filename = "mergesort.gif", path = "img/")
-#+end_src
-
-#+RESULTS:
-[[file:img/mergesort.gif]]
-
-* Complexity
-Recursive bisection of an array down to a single element has $O(\ln(n))$ complexity.
-Each merging step iterates over a particular array once,  i.e. $O(n)$ complexity.
-Thus, the mergesort algorithm has a complexity of $O(n\lg(n))$.
-
-* Implementation
-The python mergesort implementation shown here favors readability and understandability over any performance concerns.
-There are several list-copying operations that could be avoided by passing around a single list and keeping track of element indices.
-I feel this obscures relevant algorithmic details, and present things in a form easiest for me to understand.
-
-Two opposing helper functions are defined:
-
-+ ~bisect~ splits a given array, returning a tuple of the two halves.
-+ ~merge~ takes two already sorted arrays and merges them in order to a single array.
-
-#+begin_src python :eval never-export :tangle yes
 def bisect(array):
     """
     Split an array down the middle, return both halves.
@@ -228,9 +124,7 @@ def bisect(array):
     """
     middle = len(array) // 2
     return array[0:middle], array[middle : len(array)]
-#+end_src
 
-#+begin_src python :eval never-export :tangle yes
 def merge(left, right):
     """
     Merge two sorted arrays into a single sorted array.
@@ -251,11 +145,7 @@ def merge(left, right):
         merged.append(right.pop(0))
 
     return merged
-#+end_src
 
-`merge_sort` coordinates the helper functions and is responsible for recursive division and merging.
-
-#+begin_src python  :eval never-export :tangle yes
 def merge_sort(array):
     """
     Sort an array using the mergesort algorithm.
@@ -272,4 +162,3 @@ def merge_sort(array):
         right = merge_sort(right)
         return merge(left, right)
     return array
-#+end_src

@@ -1,0 +1,275 @@
+#+title: Quicksort
+#+author: Eric Neer
+#+date: "2020-06-05"
+#+property: doctype post
+#+property: header-args :exports both
+#+property: header-args:R  :session *R*
+
+#+begin_src R
+library(DiagrammeR)
+library(reticulate)
+library(ggplot2)
+library(gganimate)
+
+set.seed(0)
+
+# load all the python code blocks from this file in the R session
+source_python("quicksort.py")
+#+end_src
+
+#+RESULTS:
+
+
+#+begin_src dot :file img/quicksort.svg :cmdline -Tsvg :results file :exports results
+digraph {
+    rankdir="TB"
+    node[style="filled", shape="plaintext"]
+    Q U I C K S O R T
+
+    node[style="", shape="plaintext"]
+
+    QUICKSORT [label=<QUICKSOR<u>T</u>>]
+    QICKSOR [label=<QICKSO<u>R</u>>]
+
+    QICKO [label=<QICK<u>O</u>>]
+    ICK [label=<IC<u>K</u>>]
+
+    IC [label=<I<u>C</u>>]
+
+    QUICKSORT -> {QICKSOR T U}
+    QICKSOR -> {QICKO R S}
+    QICKO -> {ICK O Q}
+
+    ICK -> {IC K}
+
+    IC -> {I C}
+
+
+    subgraph {
+      rankdir="LR"
+      edge[style="invis"]
+      rank="same"
+      QICKSOR -> T -> U
+    }
+
+    subgraph {
+      rankdir="LR"
+      edge[style="invis"]
+      rank="same"
+      QICKO -> R -> S
+    }
+
+    subgraph {
+      rankdir="LR"
+      edge[style="invis"]
+      rank="same"
+      ICK -> O -> Q
+    }
+
+    subgraph {
+      rankdir="LR"
+      edge[style="invis"]
+      rank="same"
+      IC -> K
+    }
+
+    subgraph {
+      rankdir="LR"
+      edge[style="invis"]
+      rank="same"
+      C -> I
+    }
+  }
+#+end_src
+
+#+caption: Using quicksort to sort the letters of the word "QUICKSORT".  Pivot items are underlined.
+#+RESULTS:
+[[file:img/quicksort.svg]]
+
+* Description
+Quicksort, like mergesort, is another divide and conquer sorting technique.
+The general strategy of quicksort is as follows:
+
+1. Given an array, choose an element to act as the "pivot" which will be used to partition the array.
+1. Separate the array in two, forming a group of elements smaller than the pivot and a group larger than the pivot.
+1. Recursively partition these two groups in the same manner as the prior steps.
+1. Combine all the partitions (no work is required as they are all sorted).
+
+The graph above shows how quicksort would sort the letters of the word "QUICKSORT".
+Note that when partitioning has completed (only 1 letter arrays remain), the highlighted leaf nodes end up in sorted order when read left-to-right.
+This illustrates how the partitioning routine of quicksort is responsible for sorting, whereas the final merge step is trivial.
+
+Below, a numerical array is sorted with quicksort.
+Highlighted elements are undergoing sorting, with the pivot element highlighted a different color.
+A horizontal line represents the value (height) of the pivot.
+Note how on each iteration, values to the left of the pivot sit below the line, whereas values to the right sit above.
+The elements to the left of the pivot are not themselves sorted, but they are all less than the pivot.
+The reverse is true for those elements on the right.
+
+#+begin_src python :eval never-export :tangle yes
+import pandas as pd
+
+class QuickSorter(object):
+    STATUS_NONE = "none"
+    STATUS_SORTING = "sorting"
+    STATUS_PIVOT = "pivot"
+
+    def __init__(self, data):
+        self._data = data
+        self._snapshots = []
+        self._sorted = False
+        for idx, value in enumerate(self._data):
+            self._snapshots.append(
+                {
+                    "position": idx,
+                    "value": value,
+                    "iteration": 0,
+                    "status": QuickSorter.STATUS_NONE,
+                    "pivot": 0
+                }
+            )
+        self._iteration_count = 1
+
+    @property
+    def data(self):
+        return self._data
+
+    @data.setter
+    def data(self, new_data):
+        """
+        Ensures a "sorted" state is invalidated on data change.
+        """
+        self._data = new_data
+        self.sorted = False
+
+    @property
+    def snapshots(self):
+        return pd.DataFrame.from_records(self._snapshots)
+
+    def quick_sort(self, low_idx, high_idx):
+        if low_idx < high_idx:
+            _, pivot_idx = self.partition(low_idx, high_idx)
+            self._snapshot(low_idx, high_idx, pivot_idx)
+            self.quick_sort(low_idx, pivot_idx - 1)
+            self.quick_sort(pivot_idx + 1, high_idx)
+
+    def partition(self, low_idx, high_idx):
+        i = low_idx - 1
+        pivot = self.data[high_idx]
+        for j in range(low_idx, high_idx):
+            if self.data[j] <= pivot:
+                i += 1
+                swap(self.data, i, j)
+        swap(self.data, i + 1, high_idx)
+        pivot_idx = i + 1
+        return self.data, pivot_idx
+
+    def _snapshot(self, low_idx, high_idx, pivot_idx):
+        """
+        Copy self.data, indicating if each element is currently being sorted.
+        """
+        for idx, value in enumerate(self._data):
+            self._snapshots.append(
+                {
+                    "position": idx,
+                    "value": value,
+                    "iteration": self._iteration_count,
+                    "status": QuickSorter.STATUS_PIVOT
+                    if idx == pivot_idx
+                    else QuickSorter.STATUS_SORTING
+                    if idx in range(low_idx, high_idx + 1)
+                    else QuickSorter.STATUS_NONE,
+                    "pivot": self.data[pivot_idx]
+                }
+            )
+        self._iteration_count += 1
+#+end_src
+
+#+RESULTS:
+: None
+
+#+begin_src R :file img/quicksorter.gif :results output graphics file
+data <- py$QuickSorter(runif(30))
+data$quick_sort(0L, 29L)
+anim <- data$snapshots %>%
+    ggplot(.) +
+    aes(x = position, y = value, fill = status) +
+    geom_col() +
+    geom_hline(aes(yintercept=pivot)) +
+    scale_fill_manual(values=c("#d0d3d4", "#27ae60", "#3498db")) +
+    transition_manual(iteration) +
+    theme_void() +
+    theme(legend.position = "none") +
+    ggtitle('Mergesort - Iteration #{current_frame}')
+
+animate(anim, renderer = gifski_renderer(), fps = 2.5, end_pause = 5)
+anim_save("quicksorter.gif", animation = last_animation(), path = "img/")
+#+end_src
+
+#+caption: Using quicksort to sort a numerical array.  Highlighted elements are being sorted, with the height of the pivot represented as a horizontal line.
+#+RESULTS:
+[[file:img/quicksorter.gif]]
+
+* Implementation
+~quick_sort~ facilitates the recursive partitioning, while `swap` is a helper to cleanly move elements around.
+
+#+begin_src python :tangle yes
+def quick_sort(array, low_idx, high_idx):
+    """
+    Sort an array using the quick sort algorithm.
+
+    >>> quick_sort([6, 7, 13, 1, 12, 8, 14, 2], 0, 7)
+    [1, 2, 6, 7, 8, 12, 13, 14]
+    """
+    if low_idx < high_idx:
+        _, pivot_idx = partition(array, low_idx, high_idx)
+        quick_sort(array, low_idx, pivot_idx - 1)
+        quick_sort(array, pivot_idx + 1, high_idx)
+    return array
+
+
+def swap(array, first_idx, second_idx):
+    """
+    Swap two elements in an array.
+
+    >>> swap([13, 31], 0, 1)
+    [31, 13]
+    """
+    array[first_idx], array[second_idx] = array[second_idx], array[first_idx]
+    return array
+#+end_src
+
+As mentioned above, the partitioning of the array does the actual sorting work, thus all the interesting details are in `partition`.
+This function selects the last element of the given (sub-)array as the pivot and traverses the rest of the (sub-)array, comparing the pivot to each value.
+If an encountered value is less than the pivot, it is swapped to the end of the left side (i.e. values less than the pivot) of the values being partitioned.
+Two indices are involved, one to iterate over the array, and the other to keep track of the last value encountered that is less than the pivot, used in swapping.
+
+#+begin_src python :tangle yes
+def partition(array, low_idx, high_idx):
+    """
+    Partition array into arrays of items smaller and larger than pivot.
+
+    >>> partition([2, 8, 7, 1, 3, 5, 6, 4], 0, 7)
+    ([2, 1, 3, 4, 7, 5, 6, 8], 3)
+    """
+    i = low_idx - 1
+    pivot = array[high_idx]
+    for j in range(low_idx, high_idx):
+        if array[j] <= pivot:
+            i += 1
+            swap(array, i, j)
+    swap(array, i + 1, high_idx)
+    pivot_idx = i + 1
+    return array, pivot_idx
+#+end_src
+
+* Complexity
+
+Choosing a partition has been glossed over thus far, but plays a central role in the performance of quicksort.
+As presented here, the pivot is always assumed to be the last element of the array under investigation.
+There exist many variations on this, including assuming the first, middle, or taking a random element as a pivot.
+
+Worst case performance occurs when the chosen pivot results in one empty and one size $(n - 1)$ array after partitioning.
+This would result in $O(n^2)$ behavior.
+Conversely, the best case is when partitioning results in two balanced arrays yielding $O(n \ln{n})$ performance.
+In reality, the *average* expected performance tends more toward the best case.
