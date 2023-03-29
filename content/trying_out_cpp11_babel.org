@@ -1,6 +1,7 @@
 #+title: Trying out cpp11 and org-babel
-#+property: header-args:R  :session *R*
+#+property: header-args:R  :session *R-cpp11*
 #+property: header-args    :exports both
+#+property: doctype post-draft
 
 * Trying out CPP11 and org-babel
 ** Setup
