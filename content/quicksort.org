@@ -1,11 +1,12 @@
 #+title: Quicksort
 #+author: Eric Neer
-#+date: "2020-06-05"
+#+date: 2020-06-05
+#+tags: python algorithms
 #+property: doctype post
 #+property: header-args :exports both
-#+property: header-args:R  :session *R*
+#+property: header-args:R  :session *R-quicksort*
 
-#+begin_src R
+#+begin_src R :exports none
 library(DiagrammeR)
 library(reticulate)
 library(ggplot2)
@@ -17,9 +18,7 @@ set.seed(0)
 source_python("quicksort.py")
 #+end_src
 
-#+RESULTS:
-
-
+* Quicksort
 #+begin_src dot :file img/quicksort.svg :cmdline -Tsvg :results file :exports results
 digraph {
     rankdir="TB"
@@ -86,7 +85,8 @@ digraph {
 #+RESULTS:
 [[file:img/quicksort.svg]]
 
-* Description
+
+** Description
 Quicksort, like mergesort, is another divide and conquer sorting technique.
 The general strategy of quicksort is as follows:
 
@@ -106,7 +106,98 @@ Note how on each iteration, values to the left of the pivot sit below the line, 
 The elements to the left of the pivot are not themselves sorted, but they are all less than the pivot.
 The reverse is true for those elements on the right.
 
-#+begin_src python :eval never-export :tangle yes
+#+begin_src R :file img/quicksorter.gif :results output graphics file :exports results
+data <- py$QuickSorter(runif(30))
+data$quick_sort(0L, 29L)
+anim <- data$snapshots %>%
+    ggplot(.) +
+    aes(x = position, y = value, fill = status) +
+    geom_col() +
+    geom_hline(aes(yintercept=pivot)) +
+    scale_fill_manual(values=c("#d0d3d4", "#27ae60", "#3498db")) +
+    transition_manual(iteration) +
+    theme_void() +
+    theme(legend.position = "none") +
+    ggtitle('Mergesort - Iteration #{current_frame}')
+
+animate(anim, renderer = gifski_renderer(), fps = 2.5, end_pause = 5)
+anim_save("quicksorter.gif", animation = last_animation(), path = "img/")
+#+end_src
+
+
+#+caption: Using quicksort to sort a numerical array.  Highlighted elements are being sorted, with the height of the pivot represented as a horizontal line.
+#+RESULTS:
+[[file:img/quicksorter.gif]]
+
+** Implementation
+~quick_sort~ facilitates the recursive partitioning, while ~swap~ is a helper to cleanly move elements around.
+
+#+begin_src python :tangle yes :results none
+def quick_sort(array, low_idx, high_idx):
+    """
+    Sort an array using the quick sort algorithm.
+
+    >>> quick_sort([6, 7, 13, 1, 12, 8, 14, 2], 0, 7)
+    [1, 2, 6, 7, 8, 12, 13, 14]
+    """
+    if low_idx < high_idx:
+        _, pivot_idx = partition(array, low_idx, high_idx)
+        quick_sort(array, low_idx, pivot_idx - 1)
+        quick_sort(array, pivot_idx + 1, high_idx)
+    return array
+
+
+def swap(array, first_idx, second_idx):
+    """
+    Swap two elements in an array.
+
+    >>> swap([13, 31], 0, 1)
+    [31, 13]
+    """
+    array[first_idx], array[second_idx] = array[second_idx], array[first_idx]
+    return array
+#+end_src
+
+As mentioned above, the partitioning of the array does the actual sorting work, thus all the interesting details are in ~partition~.
+This function selects the last element of the given (sub-)array as the pivot and traverses the rest of the (sub-)array, comparing the pivot to each value.
+If an encountered value is less than the pivot, it is swapped to the end of the left side (i.e. values less than the pivot) of the values being partitioned.
+Two indices are involved, one to iterate over the array, and the other to keep track of the last value encountered that is less than the pivot, used in swapping.
+
+#+begin_src python :tangle yes :results none
+def partition(array, low_idx, high_idx):
+    """
+    Partition array into arrays of items smaller and larger than pivot.
+
+    >>> partition([2, 8, 7, 1, 3, 5, 6, 4], 0, 7)
+    ([2, 1, 3, 4, 7, 5, 6, 8], 3)
+    """
+    i = low_idx - 1
+    pivot = array[high_idx]
+    for j in range(low_idx, high_idx):
+        if array[j] <= pivot:
+            i += 1
+            swap(array, i, j)
+    swap(array, i + 1, high_idx)
+    pivot_idx = i + 1
+    return array, pivot_idx
+#+end_src
+
+** Complexity
+
+Choosing a partition has been glossed over thus far, but plays a central role in the performance of quicksort.
+As presented here, the pivot is always assumed to be the last element of the array under investigation.
+There exist many variations on this, including assuming the first, middle, or taking a random element as a pivot.
+
+Worst case performance occurs when the chosen pivot results in one empty and one size $(n - 1)$ array after partitioning.
+This would result in $O(n^2)$ behavior.
+Conversely, the best case is when partitioning results in two balanced arrays yielding $O(n \ln{n})$ performance.
+In reality, the *average* expected performance tends more toward the best case.
+
+** Tracking Sorting Progression
+
+The following class is used to track the progression of sorting which can be used to visualize how sorting evolves.
+
+#+begin_src python :eval never-export :tangle yes :results none
 import pandas as pd
 
 class QuickSorter(object):
@@ -184,92 +275,3 @@ class QuickSorter(object):
             )
         self._iteration_count += 1
 #+end_src
-
-#+RESULTS:
-: None
-
-#+begin_src R :file img/quicksorter.gif :results output graphics file
-data <- py$QuickSorter(runif(30))
-data$quick_sort(0L, 29L)
-anim <- data$snapshots %>%
-    ggplot(.) +
-    aes(x = position, y = value, fill = status) +
-    geom_col() +
-    geom_hline(aes(yintercept=pivot)) +
-    scale_fill_manual(values=c("#d0d3d4", "#27ae60", "#3498db")) +
-    transition_manual(iteration) +
-    theme_void() +
-    theme(legend.position = "none") +
-    ggtitle('Mergesort - Iteration #{current_frame}')
-
-animate(anim, renderer = gifski_renderer(), fps = 2.5, end_pause = 5)
-anim_save("quicksorter.gif", animation = last_animation(), path = "img/")
-#+end_src
-
-#+caption: Using quicksort to sort a numerical array.  Highlighted elements are being sorted, with the height of the pivot represented as a horizontal line.
-#+RESULTS:
-[[file:img/quicksorter.gif]]
-
-* Implementation
-~quick_sort~ facilitates the recursive partitioning, while `swap` is a helper to cleanly move elements around.
-
-#+begin_src python :tangle yes
-def quick_sort(array, low_idx, high_idx):
-    """
-    Sort an array using the quick sort algorithm.
-
-    >>> quick_sort([6, 7, 13, 1, 12, 8, 14, 2], 0, 7)
-    [1, 2, 6, 7, 8, 12, 13, 14]
-    """
-    if low_idx < high_idx:
-        _, pivot_idx = partition(array, low_idx, high_idx)
-        quick_sort(array, low_idx, pivot_idx - 1)
-        quick_sort(array, pivot_idx + 1, high_idx)
-    return array
-
-
-def swap(array, first_idx, second_idx):
-    """
-    Swap two elements in an array.
-
-    >>> swap([13, 31], 0, 1)
-    [31, 13]
-    """
-    array[first_idx], array[second_idx] = array[second_idx], array[first_idx]
-    return array
-#+end_src
-
-As mentioned above, the partitioning of the array does the actual sorting work, thus all the interesting details are in `partition`.
-This function selects the last element of the given (sub-)array as the pivot and traverses the rest of the (sub-)array, comparing the pivot to each value.
-If an encountered value is less than the pivot, it is swapped to the end of the left side (i.e. values less than the pivot) of the values being partitioned.
-Two indices are involved, one to iterate over the array, and the other to keep track of the last value encountered that is less than the pivot, used in swapping.
-
-#+begin_src python :tangle yes
-def partition(array, low_idx, high_idx):
-    """
-    Partition array into arrays of items smaller and larger than pivot.
-
-    >>> partition([2, 8, 7, 1, 3, 5, 6, 4], 0, 7)
-    ([2, 1, 3, 4, 7, 5, 6, 8], 3)
-    """
-    i = low_idx - 1
-    pivot = array[high_idx]
-    for j in range(low_idx, high_idx):
-        if array[j] <= pivot:
-            i += 1
-            swap(array, i, j)
-    swap(array, i + 1, high_idx)
-    pivot_idx = i + 1
-    return array, pivot_idx
-#+end_src
-
-* Complexity
-
-Choosing a partition has been glossed over thus far, but plays a central role in the performance of quicksort.
-As presented here, the pivot is always assumed to be the last element of the array under investigation.
-There exist many variations on this, including assuming the first, middle, or taking a random element as a pivot.
-
-Worst case performance occurs when the chosen pivot results in one empty and one size $(n - 1)$ array after partitioning.
-This would result in $O(n^2)$ behavior.
-Conversely, the best case is when partitioning results in two balanced arrays yielding $O(n \ln{n})$ performance.
-In reality, the *average* expected performance tends more toward the best case.

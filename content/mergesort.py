@@ -1,3 +1,54 @@
+def bisect(array):
+    """
+    Split an array down the middle, return both halves.
+
+    >>> bisect([5, 4, 3, 2, 1])
+    ([5, 4], [3, 2, 1])
+
+    >>> bisect([13, 42])
+    ([13], [42])
+    """
+    middle = len(array) // 2
+    return array[0:middle], array[middle : len(array)]
+
+def merge(left, right):
+    """
+    Merge two sorted arrays into a single sorted array.
+
+    >>> merge([1, 7, 13], [0, 3, 4, 10])
+    [0, 1, 3, 4, 7, 10, 13]
+    """
+    merged = []
+    while left and right:
+        if left[0] < right[0]:
+            merged.append(left.pop(0))
+        else:
+            merged.append(right.pop(0))
+
+    while left:
+        merged.append(left.pop(0))
+    while right:
+        merged.append(right.pop(0))
+
+    return merged
+
+def merge_sort(array):
+    """
+    Sort an array using the mergesort algorithm.
+
+    >>> merge_sort([13, 42, 8, 0, 2, -56])
+    [-56, 0, 2, 8, 13, 42]
+
+    >>> merge_sort(['s', 'o', 'r', 't', 'i', 'n', 'g'])
+    ['g', 'i', 'n', 'o', 'r', 's', 't']
+    """
+    if len(array) > 1:
+        left, right = bisect(array)
+        left = merge_sort(left)
+        right = merge_sort(right)
+        return merge(left, right)
+    return array
+
 import pandas as pd
 
 class MergeSorter(object):
@@ -111,54 +162,3 @@ class MergeSorter(object):
                 }
             )
         self._iteration_count += 1
-
-def bisect(array):
-    """
-    Split an array down the middle, return both halves.
-
-    >>> bisect([5, 4, 3, 2, 1])
-    ([5, 4], [3, 2, 1])
-
-    >>> bisect([13, 42])
-    ([13], [42])
-    """
-    middle = len(array) // 2
-    return array[0:middle], array[middle : len(array)]
-
-def merge(left, right):
-    """
-    Merge two sorted arrays into a single sorted array.
-
-    >>> merge([1, 7, 13], [0, 3, 4, 10])
-    [0, 1, 3, 4, 7, 10, 13]
-    """
-    merged = []
-    while left and right:
-        if left[0] < right[0]:
-            merged.append(left.pop(0))
-        else:
-            merged.append(right.pop(0))
-
-    while left:
-        merged.append(left.pop(0))
-    while right:
-        merged.append(right.pop(0))
-
-    return merged
-
-def merge_sort(array):
-    """
-    Sort an array using the mergesort algorithm.
-
-    >>> merge_sort([13, 42, 8, 0, 2, -56])
-    [-56, 0, 2, 8, 13, 42]
-
-    >>> merge_sort(['s', 'o', 'r', 't', 'i', 'n', 'g'])
-    ['g', 'i', 'n', 'o', 'r', 's', 't']
-    """
-    if len(array) > 1:
-        left, right = bisect(array)
-        left = merge_sort(left)
-        right = merge_sort(right)
-        return merge(left, right)
-    return array
