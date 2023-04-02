@@ -30,16 +30,7 @@
 (setq ejneer/site-url "https://www.ejneer.com")
 (setq ejneer/site-title   "Eric Neer")
 (setq ejneer/site-tagline "")
-
-;;(setq org-publish-use-timestamps-flag t
-;;      org-publish-timestamp-directory "./.org-cache/"
-;;      org-export-with-section-numbers nil
-;;      org-export-use-babel nil
-;;      org-export-with-smart-quotes t
-;;      org-export-with-sub-superscripts nil
-;;      org-export-with-tags 'not-in-toc
-;;      org-export-with-toc t)
-;;
+(setq content-dir (expand-file-name "content/"))
 (setq make-backup-files nil)
 
 
@@ -64,7 +55,14 @@
      (link ((href . "/static/styles.css")
             (rel . "stylesheet")))
      (link ((href . "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css")
-           (rel . "stylesheet"))))))
+           (rel . "stylesheet")))
+     (link ((href . "/static/favicon.png")
+            (rel . "icon")
+            (type . "image/x-icon")))
+     (script ((src . "https://polyfill.io/v3/polyfill.min.js?features=es6")))
+     (script ((id . "MathJax-script")
+              (async . "")
+              (src . "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"))))))
 
 (defun ejneer/site-sidebar (info)
   (shr-dom-to-xml
@@ -77,8 +75,9 @@
           (p ((class . "lead")) "Data Scientist & Engineer")
           (p ((class . "lead")) "Mercury Insurance")
           (br)
-          ,(ejneer/site-sidebar-nav-link "fab fa-github" "https://github.com/ejneer" "GitHub")
-          ,(ejneer/site-sidebar-nav-link "fab fa-linkedin" "https://www.linkedin.com/in/eric-neer/" "LinkedIn")
+          ,(ejneer/site-sidebar-nav-link "fa-solid fa-id-card" "/cv.html" "CV")
+          ,(ejneer/site-sidebar-nav-link "fa-brands fa-github" "https://github.com/ejneer" "GitHub")
+          ,(ejneer/site-sidebar-nav-link "fa-brands fa-linkedin" "https://www.linkedin.com/in/eric-neer/" "LinkedIn")
           ,(ejneer/site-footer info)))))
 
 
@@ -120,7 +119,7 @@
       (list
        (list "ejneer:main"
              :recursive t
-             :base-directory (expand-file-name "content/")
+             :base-directory content-dir
              :publishing-function 'ejneer/org-html-publish-to-html
              :publishing-directory (expand-file-name "public/")
              :with-author nil
@@ -134,7 +133,7 @@
              :base-directory (expand-file-name "content/")
              :publishing-directory (expand-file-name "public/")
              :publishing-function 'org-publish-attachment
-             :base-extension "\\(gif\\|svg\\|css\\|jpeg\\)")
+             :base-extension "\\(gif\\|svg\\|css\\|jpeg\\|png\\|pdf\\)")
 
        (list "ejneer:all"
              :components '("ejneer:main" "ejneer:static"))))
@@ -142,3 +141,28 @@
 (defun ejneer/publish ()
   (interactive)
   (org-publish-all t))
+
+(defun ejneer/find-main-proj (proj-name)
+  (cl-find-if (lambda (x) (string= (car x) proj-name)) org-publish-project-alist))
+
+
+(setq ejneer/proj-name "ejneer:main")
+(setq ejneer/proj-files (org-publish-get-base-files (ejneer/find-main-proj ejneer/proj-name)))
+
+;; adapted from https://kitchingroup.cheme.cmu.edu/blog/2013/05/05/Getting-keyword-options-in-org-files/
+(defun ejneer/get-file-keywords (file-path)
+  (with-temp-buffer
+    (insert-file-contents file-path)
+    (org-element-map
+        (org-element-parse-buffer 'element)
+        'keyword
+      (lambda (keyword) (cons (org-element-property :key keyword)
+                              (org-element-property :value keyword))))))
+
+(defun ejneer/is-post-p (file-path)
+  (member '("PROPERTY" . "doctype post") (ejneer/get-file-keywords file-path)))
+
+(defun ejneer/get-file-export-env (file-path)
+  (with-temp-buffer
+    (insert-file-contents file-path)
+    (org-export-get-environment)))
