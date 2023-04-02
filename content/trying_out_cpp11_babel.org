@@ -1,11 +1,19 @@
 #+title: Trying out cpp11 and org-babel
+#+date: 2022-11-06
+#+tags: org R C/C++
 #+property: header-args:R  :session *R-cpp11*
 #+property: header-args    :exports both
-#+property: doctype post-draft
+#+property: doctype post
 
 * Trying out CPP11 and org-babel
-** Setup
-*** Compiling src blocks
+
+Given that I want to learn mor  e about C/C++ and do all my writing with org mode,
+I wanted to try my hand at combining them. The popular R library ~cpp11~
+provides facilities to use C++ code from R, and the below is a record of my
+steps in trying to get it to work with org mode.
+
+** Compiling src blocks
+
 My initial thought was to have C++ source blocks that can be normally executed
 with babel, making functions defined in them available to R through cpp11.
 Muddling through the errors I encountered, I discovered a couple things I needed
@@ -77,7 +85,7 @@ to do:
    I settled on another method to integrate cpp11 and babel that feels pretty
    natural to me.
 
-*** Tangling C++ blocks and using ~cpp_source~
+** Tangling C++ blocks and using ~cpp_source~
 
 It is possible to "tangle" src blocks, meaning the code in the block is
 extracted and put in to a file that you can optionally name. This is useful
@@ -112,7 +120,7 @@ Tangle this block:
 
 Source it here:
 
-#+begin_src R :results value
+#+begin_src R :results value :eval never-export
   library(cpp11)
   cpp_source("trying_out_cpp11_babel.cpp")
 
@@ -125,7 +133,3 @@ Source it here:
 |  5.3355521701742 |
 | 5.36576539138332 |
 | 5.25973593001254 |
-** A More Complicated Example
-#+begin_src C++ :main no :results none :eval never-export :tangle yes
-
-#+end_src
