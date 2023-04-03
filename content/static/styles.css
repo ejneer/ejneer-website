@@ -71,6 +71,11 @@ table tbody {
     color: gray
 }
 
+code {
+    color: gray;
+    font-style: italic;
+}
+
 /* source code highlighting */
 pre.src {
     position: relative;
