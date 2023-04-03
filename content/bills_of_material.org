@@ -1,8 +1,10 @@
 #+title: Bills of Material
 #+author: Eric Neer
 #+date: 2020-07-25
-#+property: header-args :exports both
-#+property: header-args:R  :session *R*
+#+tags: sql graphs manufacturing
+#+property: doctype post
+#+property: header-args :exports both :eval never-export
+#+property: header-args:R  :session *R-bom*
 #+property: header-args:sqlite :db bom.db :colnames yes
 
 

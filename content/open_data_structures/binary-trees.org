@@ -1,5 +1,6 @@
 #+title: Binary Trees
-#+PROPERTY: header-args :eval never-export
+#+property: header-args :eval never-export
+#+property: header-args:lisp :exports code
 
 * Binary Trees
 
@@ -441,6 +442,9 @@ O(log n) worst-case time operations can be achieved by simulating a tree that is
 not binary: one in which nodes can have up to four children.
 
 ** Testing
+:PROPERTIES:
+:header-args:lisp: :exports both
+:END:
 I've added this section to document tests of the code I've translated from the book.
 *** Setup
 #+begin_src lisp

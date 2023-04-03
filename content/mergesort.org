@@ -3,7 +3,7 @@
 #+date: 2020-05-24
 #+tags: python algorithms
 #+property: doctype post
-#+property: header-args :exports both
+#+property: header-args :exports both :eval never-export
 #+property: header-args:R  :session *R-mergesort*
 
 #+begin_src R :exports none

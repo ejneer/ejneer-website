@@ -1,6 +1,11 @@
 #+title: Undirected Graph Traversal
+#+date: 2022-07-13
+#+tags: commonlisp algorithms graphs
+#+property: doctype post
+#+property: header-args :eval never-export
+#+property: header-args:lisp :exports code
 
-* Undirected Graph Traversal :lisp:algorithms:
+* Undirected Graph Traversal
 
 #+begin_src dot :file img/graph.svg :cmdline -Tsvg :results file :exports results
 graph g {
@@ -195,7 +200,7 @@ Traversing ~g~ in a breadth-first manner would happen as follows:
 
 Using ~naive-queue~ to traverse the graph:
 
-#+begin_src lisp
+#+begin_src lisp :exports both
 (defparameter work-list-queue (make-instance 'naive-queue))
 (traverse-graph g one work-list-queue)
 #+end_src
@@ -238,7 +243,7 @@ Traversing ~g~ in a depth-first manner would happen as follows:
 
 Using ~naive-stack~ to traverse the graph:
 
-#+begin_src lisp
+#+begin_src lisp :exports both
 (defparameter work-list-stack (make-instance 'naive-stack))
 (traverse-graph g one work-list-stack)
 #+end_src
