@@ -1,0 +1,374 @@
+<!DOCTYPE html><html lang="en"><head> <meta charset="utf-8" author="Eric Neer" name="viewport" content="width=device-width, initial-scale=1"></meta> <title>Undirected Graph Traversal - Eric Neer</title> <link href="/static/styles.css" rel="stylesheet"></link> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"></link> <link href="/static/favicon.png" rel="icon" type="image/x-icon"></link> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body> <div><div class="sidebar"> <div class="header"> <a href="/"> <img src="/static/pic.jpeg" width="150" style="border-radius: 50%;"></img></a> <p class="lead">Data Scientist & Engineer</p> <p class="lead">Mercury Insurance</p> <br></br><div class="sidebar-nav-item"> <i class="fa-solid fa-id-card"></i> <a href="/cv.html">CV</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-github"></i> <a href="https://github.com/ejneer">GitHub</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-linkedin"></i> <a href="https://www.linkedin.com/in/eric-neer/">LinkedIn</a></div><div class="footer"> <p>Made with <a href="https://www.gnu.org/software/emacs/">Emacs</a> 28.2 (<a href="https://orgmode.org">Org</a> mode 9.6)</p></div></div></div> <div class="content">
+<div id="outline-container-orgaf5efa8" class="outline-2">
+<h2 id="orgaf5efa8">Undirected Graph Traversal</h2>
+<div class="outline-text-2" id="text-orgaf5efa8">
+
+<div id="org8242a86" class="figure">
+<p><img src="img/graph.svg" alt="graph.svg" class="org-svg" />
+</p>
+</div>
+</div>
+
+<div id="outline-container-org8a905dc" class="outline-3">
+<h3 id="org8a905dc">Graphs and Nodes</h3>
+<div class="outline-text-3" id="text-org8a905dc">
+<p>
+Graphs are a collection of nodes and edges, and can be directed (their edges
+have a &ldquo;direction&rdquo;) or undirected (edges are bi-directional). A hash table is
+used to model the edges, with nodes as keys whose values are a list of nodes the
+key node is connected to.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defclass</span> <span style="color: #ECBE7B;">graph</span> <span style="color: #c678dd;">()</span>
+  <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>edges
+    <span style="color: #c678dd;">:initform</span> <span style="color: #a9a1e1;">(</span>make-hash-table<span style="color: #a9a1e1;">)</span>
+    <span style="color: #c678dd;">:accessor</span> edges<span style="color: #98be65;">)</span>
+   <span style="color: #98be65;">(</span>directed
+    <span style="color: #c678dd;">:initform</span> nil
+    <span style="color: #c678dd;">:accessor</span> directed<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defclass</span> <span style="color: #ECBE7B;">node</span> <span style="color: #c678dd;">()</span>
+  <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>nid <span style="color: #c678dd;">:initarg</span> <span style="color: #c678dd;">:nid</span>
+        <span style="color: #c678dd;">:accessor</span> nid<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">add-edge</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>obj graph<span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span>from node<span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span>to node<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">if</span> <span style="color: #98be65;">(</span>not <span style="color: #a9a1e1;">(</span>neighbor-p obj from to<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+      <span style="color: #98be65;">(</span><span style="color: #51afef;">progn</span> <span style="color: #a9a1e1;">(</span>set-neighbors
+              obj
+              from
+              <span style="color: #51afef;">(</span>append <span style="color: #c678dd;">(</span>neighbors obj from<span style="color: #c678dd;">)</span> <span style="color: #c678dd;">(</span>list to<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+             <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">if</span> <span style="color: #51afef;">(</span>not <span style="color: #c678dd;">(</span>directed obj<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+                 <span style="color: #51afef;">(</span>add-edge obj to from<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">print-object</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>n node<span style="color: #98be65;">)</span> out<span style="color: #c678dd;">)</span>
+  <span style="color: #5B6268;">; helpful when viewing traversal results</span>
+  <span style="color: #c678dd;">(</span>print-unreadable-object <span style="color: #98be65;">(</span>n out <span style="color: #c678dd;">:type</span> t<span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span>format out <span style="color: #98be65;">"nid: ~s"</span> <span style="color: #a9a1e1;">(</span>nid n<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+Neighbors are any nodes that are connected by an edge.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">neighbors</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>obj graph<span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span>n1 node<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span>gethash n1 <span style="color: #98be65;">(</span>edges obj<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">set-neighbors</span> <span style="color: #c678dd;">(</span>g n v<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span>setf <span style="color: #98be65;">(</span>gethash n <span style="color: #a9a1e1;">(</span>edges g<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span> v<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">neighbor-p</span> <span style="color: #c678dd;">(</span>g n1 n2<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">if</span> <span style="color: #98be65;">(</span>member n2 <span style="color: #a9a1e1;">(</span>neighbors g n1<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+      t
+      nil<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org0ce6787" class="outline-3">
+<h3 id="org0ce6787">Defining a Graph</h3>
+<div class="outline-text-3" id="text-org0ce6787">
+<p>
+The graph at the top of the page can then be defined as follows:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">g</span> <span style="color: #c678dd;">(</span>make-instance 'graph<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">one</span> <span style="color: #c678dd;">(</span>make-instance 'node <span style="color: #c678dd;">:nid</span> <span style="color: #da8548; font-weight: bold;">1</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">two</span> <span style="color: #c678dd;">(</span>make-instance 'node <span style="color: #c678dd;">:nid</span> <span style="color: #da8548; font-weight: bold;">2</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">three</span> <span style="color: #c678dd;">(</span>make-instance 'node <span style="color: #c678dd;">:nid</span> <span style="color: #da8548; font-weight: bold;">3</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">four</span> <span style="color: #c678dd;">(</span>make-instance 'node <span style="color: #c678dd;">:nid</span> <span style="color: #da8548; font-weight: bold;">4</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">five</span> <span style="color: #c678dd;">(</span>make-instance 'node <span style="color: #c678dd;">:nid</span> <span style="color: #da8548; font-weight: bold;">5</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">six</span> <span style="color: #c678dd;">(</span>make-instance 'node <span style="color: #c678dd;">:nid</span> <span style="color: #da8548; font-weight: bold;">6</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span>add-edge g one two<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>add-edge g one five<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>add-edge g one six<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>add-edge g two three<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>add-edge g two five<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>add-edge g three four<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>add-edge g four five<span style="color: #51afef;">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org8633d46" class="outline-3">
+<h3 id="org8633d46">Work List</h3>
+<div class="outline-text-3" id="text-org8633d46">
+<p>
+<code>work-list</code> is a base class that acts as a container for nodes that have been
+seen during graph traversal and those that are waiting to be operated on.
+<code>work-next</code> pops nodes from the waiting list, so the first <code>waiting</code> node is
+always returned. Thus the order of insertion into the waiting list determines
+the order in which nodes are worked.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defclass</span> <span style="color: #ECBE7B;">work-list</span> <span style="color: #c678dd;">()</span>
+    <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>seen
+     <span style="color: #c678dd;">:initform</span> nil
+     <span style="color: #c678dd;">:accessor</span> seen<span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span>waiting
+     <span style="color: #c678dd;">:initform</span> nil
+     <span style="color: #c678dd;">:accessor</span> waiting<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">work-next</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>wl work-list<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">let</span> <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>next-node <span style="color: #51afef;">(</span>pop <span style="color: #c678dd;">(</span>waiting wl<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span>setf <span style="color: #a9a1e1;">(</span>seen wl<span style="color: #a9a1e1;">)</span> <span style="color: #a9a1e1;">(</span>append <span style="color: #51afef;">(</span>seen wl<span style="color: #51afef;">)</span> <span style="color: #51afef;">(</span>list next-node<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    next-node<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">work-list-empty-p</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>wl work-list<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">if</span> <span style="color: #98be65;">(</span>waiting wl<span style="color: #98be65;">)</span> nil t<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgae9abde" class="outline-3">
+<h3 id="orgae9abde">Generic Graph Traversal</h3>
+<div class="outline-text-3" id="text-orgae9abde">
+<p>
+Graphs can be traversed (visiting each node) in a generic fashion by:
+</p>
+
+<ol class="org-ol">
+<li>Given a start node</li>
+<li>Find all neighbors of the start node that haven&rsquo;t been seen before</li>
+<li>Add these missing neighbors to a collection of node&rsquo;s waiting to be worked</li>
+<li>Mark the start node as having been seen</li>
+<li>Grab the next node from the waiting collection</li>
+<li>Repeat the process with the next node, stopping when there is no more nodes
+waiting</li>
+</ol>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">traverse-graph</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>obj graph<span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span>start node<span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span>wl work-list<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span>add-work wl <span style="color: #98be65;">(</span>list start<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+    <span style="color: #c678dd;">(</span><span style="color: #51afef;">loop</span> while <span style="color: #98be65;">(</span>not <span style="color: #a9a1e1;">(</span>work-list-empty-p wl<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span> do
+          <span style="color: #98be65;">(</span><span style="color: #51afef;">let</span> <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">(</span>current-node <span style="color: #c678dd;">(</span>work-next wl<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+             <span style="color: #a9a1e1;">(</span>add-work wl <span style="color: #51afef;">(</span>ordered-set-difference
+                           <span style="color: #c678dd;">(</span>neighbors obj current-node<span style="color: #c678dd;">)</span>
+                           <span style="color: #c678dd;">(</span>append <span style="color: #98be65;">(</span>seen wl<span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span>waiting wl<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+             <span style="color: #a9a1e1;">(</span>print current-node<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+    <span style="color: #c678dd;">(</span>seen wl<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ordered-set-difference</span> <span style="color: #c678dd;">(</span>list1 list2<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">loop</span> for x in list1 when <span style="color: #98be65;">(</span>not <span style="color: #a9a1e1;">(</span>find x list2<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span> collect x<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org4ec2729" class="outline-3">
+<h3 id="org4ec2729">Breadth First Search</h3>
+<div class="outline-text-3" id="text-org4ec2729">
+<p>
+Breadth first traversal visits all neighbors of the start node, then all neighbors
+of the neighbors, and so on. This behavior is modeled by using a first-in
+first-out queue to contain the nodes that are waiting to be visited. <code>work-list</code>
+can be made to act as a queue by appending unseen neighbors of a given node to
+the end of the waiting list. <code>naive-queue</code> subclasses <code>work-list</code> to allow
+specialization of the <code>add-work</code> method for queue insertion behavior.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defclass</span> <span style="color: #ECBE7B;">naive-queue</span> <span style="color: #c678dd;">(</span>work-list<span style="color: #c678dd;">)</span> <span style="color: #c678dd;">()</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">add-work</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>nq naive-queue<span style="color: #98be65;">)</span> new-work<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span>setf <span style="color: #98be65;">(</span>waiting nq<span style="color: #98be65;">)</span>
+        <span style="color: #98be65;">(</span>nconc <span style="color: #a9a1e1;">(</span>waiting nq<span style="color: #a9a1e1;">)</span> new-work<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+Traversing <code>g</code> in a breadth-first manner would happen as follows:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Seen</th>
+<th scope="col" class="org-right">Current-Node</th>
+<th scope="col" class="org-left">Queue</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">-</td>
+<td class="org-right">1</td>
+<td class="org-left">2, 5, 6</td>
+</tr>
+
+<tr>
+<td class="org-left">1</td>
+<td class="org-right">2</td>
+<td class="org-left">5, 6, 3</td>
+</tr>
+
+<tr>
+<td class="org-left">1, 2</td>
+<td class="org-right">5</td>
+<td class="org-left">6, 3, 4</td>
+</tr>
+
+<tr>
+<td class="org-left">1, 2, 5</td>
+<td class="org-right">6</td>
+<td class="org-left">3, 4</td>
+</tr>
+
+<tr>
+<td class="org-left">1, 2, 5, 6</td>
+<td class="org-right">3</td>
+<td class="org-left">4</td>
+</tr>
+
+<tr>
+<td class="org-left">1, 2, 5, 6, 3</td>
+<td class="org-right">4</td>
+<td class="org-left">-</td>
+</tr>
+
+<tr>
+<td class="org-left">1, 2, 5, 6, 3, 4</td>
+<td class="org-right">-</td>
+<td class="org-left">-</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Using <code>naive-queue</code> to traverse the graph:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">work-list-queue</span> <span style="color: #c678dd;">(</span>make-instance 'naive-queue<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>traverse-graph g one work-list-queue<span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+(#&lt;NODE nid: 1&gt; #&lt;NODE nid: 2&gt; #&lt;NODE nid: 5&gt; #&lt;NODE nid: 6&gt; #&lt;NODE nid: 3&gt;
+ #&lt;NODE nid: 4&gt;)
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orgbb4203d" class="outline-3">
+<h3 id="orgbb4203d">Depth First Search</h3>
+<div class="outline-text-3" id="text-orgbb4203d">
+<p>
+Depth first search visits the first child of the start node, followed by the
+first child of the first child, etc. This is modeled with a first-in last-out
+stack to contain waiting nodes. Insertion in to the stack puts the unseen
+neighbors of a given node on the front of the waiting list. <code>naive-stack</code>
+subclasses <code>work-list</code> such that <code>add-work</code> may be specialized to accomplish
+this.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defclass</span> <span style="color: #ECBE7B;">naive-stack</span> <span style="color: #c678dd;">(</span>work-list<span style="color: #c678dd;">)</span> <span style="color: #c678dd;">()</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">add-work</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>ns naive-stack<span style="color: #98be65;">)</span> new-work<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span>setf <span style="color: #98be65;">(</span>waiting ns<span style="color: #98be65;">)</span>
+        <span style="color: #98be65;">(</span>nconc new-work <span style="color: #a9a1e1;">(</span>waiting ns<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+Traversing <code>g</code> in a depth-first manner would happen as follows:
+</p>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Seen</th>
+<th scope="col" class="org-right">Current-Node</th>
+<th scope="col" class="org-left">Stack</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">-</td>
+<td class="org-right">1</td>
+<td class="org-left">2, 5, 6</td>
+</tr>
+
+<tr>
+<td class="org-left">1</td>
+<td class="org-right">2</td>
+<td class="org-left">3, 5, 6</td>
+</tr>
+
+<tr>
+<td class="org-left">1, 2</td>
+<td class="org-right">3</td>
+<td class="org-left">4, 5, 6</td>
+</tr>
+
+<tr>
+<td class="org-left">1, 2, 3</td>
+<td class="org-right">4</td>
+<td class="org-left">5, 6</td>
+</tr>
+
+<tr>
+<td class="org-left">1, 2, 3, 4</td>
+<td class="org-right">5</td>
+<td class="org-left">6</td>
+</tr>
+
+<tr>
+<td class="org-left">1, 2, 3, 4, 5</td>
+<td class="org-right">6</td>
+<td class="org-left">-</td>
+</tr>
+
+<tr>
+<td class="org-left">1, 2, 3, 4, 5, 6</td>
+<td class="org-right">-</td>
+<td class="org-left">-</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Using <code>naive-stack</code> to traverse the graph:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">work-list-stack</span> <span style="color: #c678dd;">(</span>make-instance 'naive-stack<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>traverse-graph g one work-list-stack<span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+(#&lt;NODE nid: 1&gt; #&lt;NODE nid: 2&gt; #&lt;NODE nid: 3&gt; #&lt;NODE nid: 4&gt; #&lt;NODE nid: 5&gt;
+ #&lt;NODE nid: 6&gt;)
+</pre>
+</div>
+</div>
+</div>
+</div></div></body></html>

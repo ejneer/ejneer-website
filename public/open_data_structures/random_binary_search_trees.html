@@ -1,0 +1,199 @@
+<!DOCTYPE html><html lang="en"><head> <meta charset="utf-8" author="Eric Neer" name="viewport" content="width=device-width, initial-scale=1"></meta> <title>Random Binary Search Trees - Eric Neer</title> <link href="/static/styles.css" rel="stylesheet"></link> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"></link> <link href="/static/favicon.png" rel="icon" type="image/x-icon"></link> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body> <div><div class="sidebar"> <div class="header"> <a href="/"> <img src="/static/pic.jpeg" width="150" style="border-radius: 50%;"></img></a> <p class="lead">Data Scientist & Engineer</p> <p class="lead">Mercury Insurance</p> <br></br><div class="sidebar-nav-item"> <i class="fa-solid fa-id-card"></i> <a href="/cv.html">CV</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-github"></i> <a href="https://github.com/ejneer">GitHub</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-linkedin"></i> <a href="https://www.linkedin.com/in/eric-neer/">LinkedIn</a></div><div class="footer"> <p>Made with <a href="https://www.gnu.org/software/emacs/">Emacs</a> 28.2 (<a href="https://orgmode.org">Org</a> mode 9.6)</p></div></div></div> <div class="content">
+<div id="outline-container-orgee9aaeb" class="outline-2">
+<h2 id="orgee9aaeb">Random Binary Search Trees</h2>
+<div class="outline-text-2" id="text-orgee9aaeb">
+<p>
+In this chapter, we present a binary search tree structure that uses
+randomization to achieve <code>O(log n)</code> expected time for all operations.
+</p>
+</div>
+<div id="outline-container-orgbb8e4d4" class="outline-3">
+<h3 id="orgbb8e4d4">Random Binary Search Trees</h3>
+<div class="outline-text-3" id="text-orgbb8e4d4">
+<p>
+Consider the two binary search trees shown in Figure X, each of which has <code>n=15</code>
+nodes. The one on the left is a list and the other is a perfectly balanced
+binary search tree. The one on the left has a neight of <code>n - 1 = 14</code> and the one
+on the right has a height of three.
+</p>
+
+
+<div id="org11b0e3a" class="figure">
+<p><img src="img/twobinarytrees1.svg" alt="twobinarytrees1.svg" class="org-svg" />
+</p>
+</div>
+
+
+<div id="org417a3dc" class="figure">
+<p><img src="img/twobinarytrees2.svg" alt="twobinarytrees2.svg" class="org-svg" />
+</p>
+</div>
+
+<p>
+Imagine how these two trees could have been constructed. The one on the left
+occurs if we start with an empty binary search tree and add the sequence
+</p>
+
+<div class="org-src-container">
+<pre class="src src-quote">&lt;0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14&gt;
+</pre>
+</div>
+
+<p>
+No other sequence of additions will create this tree (as you can prove by
+induction on <code>n</code>). On the other hand, the tree on the right can be created by
+the sequence
+</p>
+
+<div class="org-src-container">
+<pre class="src src-quote">&lt;7, 3, 11, 1, 5, 9, 13, 0, 2, 4, 6, 8, 10, 12, 14&gt;
+</pre>
+</div>
+
+<p>
+Other sequences work as well, including
+</p>
+
+<div class="org-src-container">
+<pre class="src src-quote">&lt;7, 3, 1, 5, 0, 2, 4, 6, 11, 9, 13, 8, 10, 12, 14&gt;
+</pre>
+</div>
+
+<p>
+and
+</p>
+
+<div class="org-src-container">
+<pre class="src src-quote">&lt;7, 3, 1, 11, 5, 0, 2, 4, 6, 9, 13, 8, 10, 12, 14&gt;
+</pre>
+</div>
+
+<p>
+In fact, there are 21,964,800 addition sequences that generate the tree on the
+right and only one that generates the tree on the left. The above example gives
+some anecdotal evidence that, if we choose a random permutation of 0,&#x2026;,14 and
+add it into a binary search tree, then we are more likely to get a very balanced
+tree than we are to get a very unbalanced tree.
+</p>
+
+<p>
+We can formalize this notion by studying random binary search trees. A random
+binary search tree of size <code>n</code> is obtained in the following way: Take ka random
+permutation <code>x_0,...,x_n-1</code> of the integers <code>0,...,n-1</code> and addd its elements,
+one by one, into a binary search tree. By random permutation we mean that each
+of the possible <code>n!</code> permutations (orderings) of <code>0,...,n-1</code> is equally likely,
+so that the probability of obtaining any particular permutation is <code>1/n!</code>.
+</p>
+
+<p>
+Note that the values <code>0,...,n-1</code> could be replaced by any ordered set of <code>n</code>
+elements without changing any of the properties of the random binary search
+tree. The element \(x \in {0,...,n-1} x\) is simply stanidng in for the element
+of rank <code>x</code> in an ordered set of size <code>n</code>.
+</p>
+
+<p>
+Before we can present our main result about binary search trees, we must take
+some time for a short digression to discuss a type of number that comes up
+frequently when studing randomized structures. For a non-negative integer <code>k</code>,
+the <code>k</code>-th harmonic number, denoted <code>H_k</code>, is defined as
+</p>
+
+<p>
+\[H_k = 1 + 1/2 + 1/3 + ... + 1/k\]
+</p>
+
+<p>
+The harmonic number <code>H_k</code> has no si ple closed form, but it is very closely
+related to the natrual logarithm of <code>k</code>. In particular,
+</p>
+
+<p>
+\[ln(k) < H_k <= ln(k) + 1\]
+</p>
+
+<p>
+Readers who have studied calculus might notice that this is because the
+integral TODO. Keeping in mind that an integral can be interpreted as the area
+abetween a curve and the x-axis, the value of <code>H_k</code>, can be lower-bounded by the
+integral TODO and upper bounded by TODO.
+</p>
+
+<p>
+TODO rest of this section when I feel like it.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgafde188" class="outline-3">
+<h3 id="orgafde188">Treap: A Randomized Binary Search Tree</h3>
+<div class="outline-text-3" id="text-orgafde188">
+<p>
+The problem with random binary search trees is, of course, that they are not
+dynamic. They don&rsquo;t support the <code>(add x)</code> or <code>(remove x)</code> operations needed to
+implement the <code>SSet</code> interface. In this section we describe a data structure
+called a <code>treap</code> that uses lemma TODO to implement the interface.
+</p>
+
+<p>
+A Node in a <code>treap</code> is like a node in a <code>binary-search-tree</code> in that it has a
+data value <code>x</code>, but also contains a unique numerical property <code>p</code> that is
+assigned at random.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defclass</span> <span style="color: #ECBE7B;">treap-node</span> <span style="color: #c678dd;">(</span>binary-tree-node<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>p <span style="color: #c678dd;">:initarg</span> <span style="color: #c678dd;">:p</span>
+      <span style="color: #c678dd;">:accessor</span> p<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+In addition to being a binary search tree, the nodes in a <code>treap</code> also obey the heap property:
+</p>
+
+<blockquote>
+<p>
+(Heap Property) At every node <code>u</code>, except the root, <code>(parent (p u)) &lt; (p u)</code>
+</p>
+</blockquote>
+
+<p>
+In other words, each node has a priority smaller than that of its two children. An example is shown in figure X:
+</p>
+
+
+<div id="org497caeb" class="figure">
+<p><img src="img/treapexample.svg" alt="treapexample.svg" class="org-svg" />
+</p>
+</div>
+
+<p>
+The heap and binary search tree properties ensure that once the key and priority
+are defined for each node, the shape of the treap is completely determined. The
+heap property tells us that the node with the minimum priority has to be the
+root of the treap. The binary search tree property tells us that all nodes with
+keys smaller than <code>(r x)</code> are stored in the subtree rooted at <code>(left r)</code> and all
+nodes with keys larger than <code>(r x)</code> are stored in the subtree rooted at <code>(right
+r)</code>.
+</p>
+
+<p>
+The important point about priority values in a treap is that they are unique and
+assigned at random. Because of this, there are two equivalent ways we can think
+about a treap. As defined above, the treap obeys the heap and binary search tree
+properties. Alternatively, we can think of a treap as a binary search tree whose
+nodes were added in increasing order of priority. For example, the treap in
+figure X can be obtained by adding the following sequence <code>(x, p)</code> values into
+a binary search tree:
+</p>
+
+<blockquote>
+<p>
+&lt;(3,1), (1,6), (0,9), (5,11), (4,14), (9,17), (7,22), (6,42), (8,49), (2,99)&gt;
+</p>
+</blockquote>
+</div>
+</div>
+</div>
+</div></div></body></html>

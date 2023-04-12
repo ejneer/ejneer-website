@@ -1,0 +1,34 @@
+<!DOCTYPE html><html lang="en"><head> <meta charset="utf-8" author="Eric Neer" name="viewport" content="width=device-width, initial-scale=1"></meta> <title>Dbplyr Jdbc - Eric Neer</title> <link href="/static/styles.css" rel="stylesheet"></link> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"></link> <link href="/static/favicon.png" rel="icon" type="image/x-icon"></link> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body> <div><div class="sidebar"> <div class="header"> <a href="/"> <img src="/static/pic.jpeg" width="150" style="border-radius: 50%;"></img></a> <p class="lead">Data Scientist & Engineer</p> <p class="lead">Mercury Insurance</p> <br></br><div class="sidebar-nav-item"> <i class="fa-solid fa-id-card"></i> <a href="/cv.html">CV</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-github"></i> <a href="https://github.com/ejneer">GitHub</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-linkedin"></i> <a href="https://www.linkedin.com/in/eric-neer/">LinkedIn</a></div><div class="footer"> <p>Made with <a href="https://www.gnu.org/software/emacs/">Emacs</a> 28.2 (<a href="https://orgmode.org">Org</a> mode 9.6)</p></div></div></div> <div class="content"><div class="org-src-container">
+<pre class="src src-R"><span style="color: #a9a1e1;">library</span>(dplyr)
+<span style="color: #a9a1e1;">library</span>(dbplyr)
+<span style="color: #a9a1e1;">library</span>(DBI)
+<span style="color: #a9a1e1;">library</span>(RJDBC)
+<span style="color: #a9a1e1;">library</span>(rJava)
+<span style="color: #a9a1e1;">library</span>(glue)
+
+con_odbc <span style="color: #a9a1e1;">&lt;-</span> DBI::dbConnect(duckdb::duckdb(), dbdir = glue(<span style="color: #98be65;">"{tempdir()}/flights.sqlite"</span>))
+
+copy_nycflights13(con_odbc)
+
+flights2 <span style="color: #a9a1e1;">&lt;-</span> tbl(con_odbc, <span style="color: #98be65;">"flights"</span>) <span style="color: #a9a1e1;">%&gt;%</span>
+  collect() <span style="color: #a9a1e1;">%&gt;%</span>
+  mutate(dt = lubridate::make_date(year, month, day))
+
+copy_to(con_odbc, flights2, temporary = F)
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-R">con_jdbc <span style="color: #a9a1e1;">&lt;-</span> RJDBC::dbConnect(
+  RJDBC::JDBC(<span style="color: #98be65;">"org.duckdb.DuckDBDriver"</span>, <span style="color: #98be65;">"/etc/jdbc/duckdb_jdbc-0.5.1.jar"</span>),
+  glue(<span style="color: #98be65;">"jdbc:duckdb:{tempdir()}/flights.sqlite"</span>)
+)
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-R">r_jdbc <span style="color: #a9a1e1;">&lt;-</span> dbSendQuery(con_jdbc, <span style="color: #98be65;">"select * from flights2 limit 1"</span>)
+r_odbc <span style="color: #a9a1e1;">&lt;-</span> dbSendQuery(con_odbc, <span style="color: #98be65;">"select * from flights2 limit 1"</span>)
+</pre>
+</div>
+</div></div></body></html>

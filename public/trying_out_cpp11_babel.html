@@ -1,0 +1,197 @@
+<!DOCTYPE html><html lang="en"><head> <meta charset="utf-8" author="Eric Neer" name="viewport" content="width=device-width, initial-scale=1"></meta> <title>Trying out cpp11 and org-babel - Eric Neer</title> <link href="/static/styles.css" rel="stylesheet"></link> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"></link> <link href="/static/favicon.png" rel="icon" type="image/x-icon"></link> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body> <div><div class="sidebar"> <div class="header"> <a href="/"> <img src="/static/pic.jpeg" width="150" style="border-radius: 50%;"></img></a> <p class="lead">Data Scientist & Engineer</p> <p class="lead">Mercury Insurance</p> <br></br><div class="sidebar-nav-item"> <i class="fa-solid fa-id-card"></i> <a href="/cv.html">CV</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-github"></i> <a href="https://github.com/ejneer">GitHub</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-linkedin"></i> <a href="https://www.linkedin.com/in/eric-neer/">LinkedIn</a></div><div class="footer"> <p>Made with <a href="https://www.gnu.org/software/emacs/">Emacs</a> 28.2 (<a href="https://orgmode.org">Org</a> mode 9.6)</p></div></div></div> <div class="content">
+<div id="outline-container-orgd506ff1" class="outline-2">
+<h2 id="orgd506ff1">Trying out CPP11 and org-babel</h2>
+<div class="outline-text-2" id="text-orgd506ff1">
+<p>
+Given that I want to learn mor  e about C/C++ and do all my writing with org mode,
+I wanted to try my hand at combining them. The popular R library <code>cpp11</code>
+provides facilities to use C++ code from R, and the below is a record of my
+steps in trying to get it to work with org mode.
+</p>
+</div>
+
+<div id="outline-container-org5283d06" class="outline-3">
+<h3 id="org5283d06">Compiling src blocks</h3>
+<div class="outline-text-3" id="text-org5283d06">
+<p>
+My initial thought was to have C++ source blocks that can be normally executed
+with babel, making functions defined in them available to R through cpp11.
+Muddling through the errors I encountered, I discovered a couple things I needed
+to do:
+</p>
+
+<ol class="org-ol">
+<li><p>
+Tell the compiler where the <code>cpp11</code> R library&rsquo;s headers were.
+</p>
+
+<p>
+<code>cpp11</code> defines all of its functionality in header files, which come with the
+R library when it is installed. These live in the standard location for
+&ldquo;extra&rdquo; stuff required in an R packakge, the <code>inst/</code> directory, in an
+<code>include/</code> subfolder. This directory is unpacked to the top level library
+directory on installation
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">     list.files(system.file(<span style="color: #98be65;">"include"</span>, package = <span style="color: #98be65;">"cpp11"</span>), recursive = T)
+</pre>
+</div>
+
+<pre class="example" id="org48d2f22">
+    [1] "cpp11.hpp"                  "cpp11/altrep.hpp"          
+    [3] "cpp11/as.hpp"               "cpp11/attribute_proxy.hpp" 
+    [5] "cpp11/data_frame.hpp"       "cpp11/declarations.hpp"    
+    [7] "cpp11/doubles.hpp"          "cpp11/environment.hpp"     
+    [9] "cpp11/external_pointer.hpp" "cpp11/function.hpp"        
+   [11] "cpp11/integers.hpp"         "cpp11/list_of.hpp"         
+   [13] "cpp11/list.hpp"             "cpp11/logicals.hpp"        
+   [15] "cpp11/matrix.hpp"           "cpp11/named_arg.hpp"       
+   [17] "cpp11/protect.hpp"          "cpp11/r_bool.hpp"          
+   [19] "cpp11/r_string.hpp"         "cpp11/r_vector.hpp"        
+   [21] "cpp11/R.hpp"                "cpp11/raws.hpp"            
+   [23] "cpp11/sexp.hpp"             "cpp11/strings.hpp"         
+   [25] "fmt/core.h"                 "fmt/format-inl.h"          
+   [27] "fmt/format.h"
+</pre>
+
+<p>
+These files must be on the include path of the compiler. The include path can
+be modified using the <code>:flags</code> argument of the babel src block.  On my
+machine this looked like
+</p>
+
+<pre class="example" id="org23e1133">
+     :flags -I/opt/homebrew/Cellar/r/4.2.1_3 -I/Users/ejneer/Library/R/arm64/4.2/library/cpp11/include
+</pre></li>
+
+<li><p>
+Stop babel from wrapping the C++ in a main method.
+</p>
+
+<p>
+Since I only intend define functions in C++ and use them from R, I don&rsquo;t need
+a main method. If there is not main method defined in the C++ src blocks,
+default babel behavior is to wrap the block in a simple main method. From the
+docs:
+</p>
+
+<blockquote>
+<p>
+If a main method is not present in a code block then the entire block is wrapped in a trivial main function call.
+</p>
+</blockquote>
+
+<p>
+This behavior can be turned off with another header argument, <code>:main no</code>.
+</p>
+
+<p>
+With these settings in place, I no longer encountered <code>cpp11</code> or babel
+related errors. I still encountered other errors that I think were related to
+using standard library functions, and ultimately prevented me from compiling
+the src blocks like I wanted. I don&rsquo;t know if this is actually possible. An
+example error is below.
+</p>
+
+<pre class="example" id="org044d451">
+      /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include/_ctype.h:128:1: error: expected unqualified-id
+      __BEGIN_DECLS
+      ^
+</pre>
+
+<p>
+I settled on another method to integrate cpp11 and babel that feels pretty
+natural to me.
+</p></li>
+</ol>
+</div>
+</div>
+
+<div id="outline-container-org2f8666a" class="outline-3">
+<h3 id="org2f8666a">Tangling C++ blocks and using <code>cpp_source</code></h3>
+<div class="outline-text-3" id="text-org2f8666a">
+<p>
+It is possible to &ldquo;tangle&rdquo; src blocks, meaning the code in the block is
+extracted and put in to a file that you can optionally name. This is useful
+since the <code>cpp11</code> library provides a way to &ldquo;source&rdquo; c++ files, much in the same
+way you can source an R script. The workflow then comprises two steps:
+</p>
+
+<ol class="org-ol">
+<li>Tangle the C++ src block</li>
+<li>Source the C++ file in an R block with <code>cpp_source</code></li>
+</ol>
+
+<p>
+By default, the tangled file is named the same as the org file, using a file
+extension appropriate for the src block type, here .cpp. Additionally, the
+<code>:eval</code> header arg can be set to <code>never-export</code> so babel does not try to execute
+the src block on export, which would error (as above) for C++ blocks. An example
+is taken from the <code>cpp11</code> docs to show this workflow.
+</p>
+
+<p>
+Tangle this block:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-C++"><span style="color: #51afef; font-weight: bold;">  #include</span> <span style="color: #98be65;">"cpp11/doubles.hpp"</span>
+  <span style="color: #51afef;">using</span> <span style="color: #51afef;">namespace</span> <span style="color: #a9a1e1;">cpp11</span>;
+
+  <span style="color: #51afef;">[</span><span style="color: #c678dd;">[</span><span style="color: #a9a1e1;">cpp11</span>::<span style="color: #51afef;">register</span><span style="color: #c678dd;">]</span><span style="color: #51afef;">]</span>
+  <span style="color: #ECBE7B;">doubles</span> <span style="color: #c678dd;">pdist_cpp</span><span style="color: #51afef;">(</span><span style="color: #ECBE7B;">double</span> <span style="color: #dcaeea;">x</span>, <span style="color: #ECBE7B;">doubles</span> <span style="color: #dcaeea;">ys</span><span style="color: #51afef;">)</span> <span style="color: #51afef;">{</span>
+    <span style="color: #ECBE7B;">int</span> <span style="color: #dcaeea;">n</span> = ys.size<span style="color: #c678dd;">()</span>;
+    <span style="color: #a9a1e1;">writable</span>::<span style="color: #ECBE7B;">doubles</span> <span style="color: #dcaeea;">out</span><span style="color: #c678dd;">(</span>n<span style="color: #c678dd;">)</span>;
+    <span style="color: #51afef;">for</span><span style="color: #c678dd;">(</span><span style="color: #ECBE7B;">int</span> <span style="color: #dcaeea;">i</span> = <span style="color: #da8548; font-weight: bold;">0</span>; i &lt; n; ++i<span style="color: #c678dd;">)</span> <span style="color: #c678dd;">{</span>
+      out<span style="color: #98be65;">[</span>i<span style="color: #98be65;">]</span> = sqrt<span style="color: #98be65;">(</span>pow<span style="color: #a9a1e1;">(</span>ys<span style="color: #51afef;">[</span>i<span style="color: #51afef;">]</span> - x, <span style="color: #da8548; font-weight: bold;">2.0</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>;
+    <span style="color: #c678dd;">}</span>
+    <span style="color: #51afef;">return</span> out;
+  <span style="color: #51afef;">}</span>
+</pre>
+</div>
+
+<p>
+Source it here:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">  <span style="color: #a9a1e1;">library</span>(cpp11)
+  cpp_source(<span style="color: #98be65;">"trying_out_cpp11_babel.cpp"</span>)
+
+  pdist_cpp(<span style="color: #da8548; font-weight: bold;">6</span>, runif(<span style="color: #da8548; font-weight: bold;">5</span>))
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-right">5.93108451506123</td>
+</tr>
+
+<tr>
+<td class="org-right">5.69599958159961</td>
+</tr>
+
+<tr>
+<td class="org-right">5.3355521701742</td>
+</tr>
+
+<tr>
+<td class="org-right">5.36576539138332</td>
+</tr>
+
+<tr>
+<td class="org-right">5.25973593001254</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div></div></body></html>

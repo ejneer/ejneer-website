@@ -1,0 +1,191 @@
+<!DOCTYPE html><html lang="en"><head> <meta charset="utf-8" author="Eric Neer" name="viewport" content="width=device-width, initial-scale=1"></meta> <title>Converting To Org Publish - Eric Neer</title> <link href="/static/styles.css" rel="stylesheet"></link> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"></link> <link href="/static/favicon.png" rel="icon" type="image/x-icon"></link> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body> <div><div class="sidebar"> <div class="header"> <a href="/"> <img src="/static/pic.jpeg" width="150" style="border-radius: 50%;"></img></a> <p class="lead">Data Scientist & Engineer</p> <p class="lead">Mercury Insurance</p> <br></br><div class="sidebar-nav-item"> <i class="fa-solid fa-id-card"></i> <a href="/cv.html">CV</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-github"></i> <a href="https://github.com/ejneer">GitHub</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-linkedin"></i> <a href="https://www.linkedin.com/in/eric-neer/">LinkedIn</a></div><div class="footer"> <p>Made with <a href="https://www.gnu.org/software/emacs/">Emacs</a> 28.2 (<a href="https://orgmode.org">Org</a> mode 9.6)</p></div></div></div> <div class="content">
+<div id="outline-container-org59dfdd6" class="outline-2">
+<h2 id="org59dfdd6">Converting To Org Publish</h2>
+<div class="outline-text-2" id="text-org59dfdd6">
+</div>
+<div id="outline-container-orgb0dc6e1" class="outline-3">
+<h3 id="orgb0dc6e1">Motivation</h3>
+<div class="outline-text-3" id="text-orgb0dc6e1">
+<p>
+I originally set up my personal website in early 2020 using <a href="https://pkgs.rstudio.com/blogdown/">blogdown</a> since most
+of my work at the time was done with R or python, both well supported by
+Rmarkdown and its ecosystem. This was used in conjunction with the static site
+generator <a href="https://gohugo.io">hugo</a> to quickly make a nice looking site. It felt like there was a lot
+of configuration magic and hidden details, but after setting everything up once
+things just seemed to work.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org55681dc" class="outline-3">
+<h3 id="org55681dc">Publish Configuration</h3>
+<div class="outline-text-3" id="text-org55681dc">
+<div class="org-src-container">
+<pre class="src src-elisp"><span style="color: #5B6268;">;; </span><span style="color: #5B6268;">below taken from systemcrafters</span>
+<span style="color: #5B6268;">;; </span><span style="color: #5B6268;">https://systemcrafters.net/publishing-websites-with-org-mode/building-the-site/</span>
+<span style="color: #5B6268;">;; </span><span style="color: #5B6268;">Set the package installation directory so that packages aren't stored in the</span>
+<span style="color: #5B6268;">;; </span><span style="color: #5B6268;">~/.emacs.d/elpa path.</span>
+<span style="color: #51afef;">(</span><span style="color: #a9a1e1;">require</span> <span style="color: #51afef;">'</span><span style="color: #a9a1e1;">package</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">setq</span> <span style="color: #dcaeea;">package-user-dir</span> <span style="color: #c678dd;">(</span><span style="color: #a9a1e1;">expand-file-name</span> <span style="color: #98be65;">"./.packages"</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">setq</span> <span style="color: #dcaeea;">package-archives</span> <span style="color: #51afef;">'</span><span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span><span style="color: #98be65;">"melpa"</span> . <span style="color: #98be65;">"https://melpa.org/packages/"</span><span style="color: #98be65;">)</span>
+                         <span style="color: #98be65;">(</span><span style="color: #98be65;">"elpa"</span> . <span style="color: #98be65;">"https://elpa.gnu.org/packages/"</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #5B6268;">;; </span><span style="color: #5B6268;">Initialize the package system</span>
+<span style="color: #51afef;">(</span><span style="color: #c678dd;">package-initialize</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">unless</span> <span style="color: #dcaeea;">package-archive-contents</span>
+  <span style="color: #c678dd;">(</span><span style="color: #c678dd;">package-refresh-contents</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #5B6268;">;; </span><span style="color: #5B6268;">Install use-package</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">unless</span> <span style="color: #c678dd;">(</span><span style="color: #c678dd;">package-installed-p</span> <span style="color: #51afef;">'</span><span style="color: #ECBE7B;">use-package</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #c678dd;">package-install</span> <span style="color: #51afef;">'</span><span style="color: #ECBE7B;">use-package</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #a9a1e1;">require</span> <span style="color: #51afef;">'</span><span style="color: #a9a1e1;">use-package</span><span style="color: #51afef;">)</span>
+
+<span style="color: #5B6268;">;; </span><span style="color: #5B6268;">Install other dependencies</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">use-package</span> htmlize
+  <span style="color: #c678dd;">:ensure</span> t<span style="color: #51afef;">)</span>
+
+<span style="color: #5B6268;">;; </span><span style="color: #5B6268;">Load the publishing system</span>
+<span style="color: #51afef;">(</span><span style="color: #a9a1e1;">require</span> <span style="color: #51afef;">'</span><span style="color: #a9a1e1;">ox-publish</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #a9a1e1;">require</span> <span style="color: #51afef;">'</span><span style="color: #a9a1e1;">shr</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">setq</span> content-dir <span style="color: #c678dd;">(</span><span style="color: #a9a1e1;">expand-file-name</span> <span style="color: #98be65;">"content/"</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+Some text here
+</p>
+
+<div class="org-src-container">
+<pre class="src src-elisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">setq</span> <span style="color: #dcaeea;">org-publish-project-alist</span>
+      <span style="color: #c678dd;">(</span><span style="color: #a9a1e1;">list</span>
+       <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">list</span> <span style="color: #98be65;">"ejneer:main"</span>
+             <span style="color: #c678dd;">:recursive</span> t
+             <span style="color: #c678dd;">:base-directory</span> content-dir
+             <span style="color: #c678dd;">:publishing-function</span> <span style="color: #51afef;">'</span><span style="color: #ECBE7B;">ejneer/org-html-publish-to-html</span>
+             <span style="color: #c678dd;">:publishing-directory</span> <span style="color: #a9a1e1;">(</span><span style="color: #a9a1e1;">expand-file-name</span> <span style="color: #98be65;">"public/"</span><span style="color: #a9a1e1;">)</span>
+             <span style="color: #c678dd;">:with-author</span> nil
+             <span style="color: #c678dd;">:with-creator</span> nil
+             <span style="color: #c678dd;">:with-toc</span> nil
+             <span style="color: #c678dd;">:section-numbers</span> nil
+             <span style="color: #c678dd;">:time-stamp-file</span> nil<span style="color: #98be65;">)</span>
+
+       <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">list</span> <span style="color: #98be65;">"ejneer:static"</span>
+             <span style="color: #c678dd;">:recursive</span> t
+             <span style="color: #c678dd;">:base-directory</span> <span style="color: #a9a1e1;">(</span><span style="color: #a9a1e1;">expand-file-name</span> <span style="color: #98be65;">"content/"</span><span style="color: #a9a1e1;">)</span>
+             <span style="color: #c678dd;">:publishing-directory</span> <span style="color: #a9a1e1;">(</span><span style="color: #a9a1e1;">expand-file-name</span> <span style="color: #98be65;">"public/"</span><span style="color: #a9a1e1;">)</span>
+             <span style="color: #c678dd;">:publishing-function</span> <span style="color: #51afef;">'</span><span style="color: #ECBE7B;">org-publish-attachment</span>
+             <span style="color: #c678dd;">:base-extension</span> <span style="color: #98be65;">"</span><span style="color: #51afef; font-weight: bold;">\\</span><span style="color: #51afef; font-weight: bold;">(</span><span style="color: #98be65;">gif</span><span style="color: #51afef; font-weight: bold;">\\</span><span style="color: #51afef; font-weight: bold;">|</span><span style="color: #98be65;">svg</span><span style="color: #51afef; font-weight: bold;">\\</span><span style="color: #51afef; font-weight: bold;">|</span><span style="color: #98be65;">css</span><span style="color: #51afef; font-weight: bold;">\\</span><span style="color: #51afef; font-weight: bold;">|</span><span style="color: #98be65;">jpeg</span><span style="color: #51afef; font-weight: bold;">\\</span><span style="color: #51afef; font-weight: bold;">|</span><span style="color: #98be65;">png</span><span style="color: #51afef; font-weight: bold;">\\</span><span style="color: #51afef; font-weight: bold;">|</span><span style="color: #98be65;">pdf</span><span style="color: #51afef; font-weight: bold;">\\</span><span style="color: #51afef; font-weight: bold;">)</span><span style="color: #98be65;">"</span><span style="color: #98be65;">)</span>
+
+       <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">list</span> <span style="color: #98be65;">"ejneer:all"</span>
+             <span style="color: #c678dd;">:components</span> <span style="color: #51afef;">'</span><span style="color: #a9a1e1;">(</span><span style="color: #98be65;">"ejneer:main"</span> <span style="color: #98be65;">"ejneer:static"</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #c678dd;">org-export-define-derived-backend</span> <span style="color: #51afef;">'</span><span style="color: #ECBE7B;">ejneer-html</span>
+    <span style="color: #51afef;">'</span><span style="color: #ECBE7B;">html</span>
+  <span style="color: #c678dd;">:translate-alist</span> <span style="color: #51afef;">'</span><span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>template . ejneer/org-html-template<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/org-html-publish-to-html</span> <span style="color: #c678dd;">(</span>plist filename pub-dir<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #c678dd;">org-publish-org-to</span> <span style="color: #51afef;">'</span><span style="color: #ECBE7B;">ejneer-html</span>
+                      filename
+                      <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">concat</span> <span style="color: #98be65;">"."</span> <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">or</span> <span style="color: #51afef;">(</span><span style="color: #a9a1e1;">plist-get</span> plist <span style="color: #c678dd;">:html-extension</span><span style="color: #51afef;">)</span>
+                                      <span style="color: #98be65;">"html"</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+                      plist
+                      pub-dir<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/org-html-template</span> <span style="color: #c678dd;">(</span>contents info<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #a9a1e1;">concat</span>
+   <span style="color: #98be65;">"&lt;!DOCTYPE html&gt;"</span>
+   <span style="color: #98be65;">(</span><span style="color: #c678dd;">shr-dom-to-xml</span>
+    <span style="color: #51afef;">`</span><span style="color: #a9a1e1;">(</span>html <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>lang . <span style="color: #98be65;">"en"</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+      ,<span style="color: #51afef;">(</span><span style="color: #c678dd;">ejneer/site-head</span><span style="color: #51afef;">)</span>
+      ,<span style="color: #51afef;">(</span><span style="color: #c678dd;">ejneer/site-body</span> contents info<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/site-head</span> <span style="color: #c678dd;">()</span>
+  <span style="color: #c678dd;">(</span><span style="color: #c678dd;">shr-dom-to-xml</span>
+   <span style="color: #51afef;">`</span><span style="color: #98be65;">(</span>head <span style="color: #a9a1e1;">()</span>
+     <span style="color: #a9a1e1;">(</span>meta <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>charset . <span style="color: #98be65;">"utf-8"</span><span style="color: #c678dd;">)</span>
+            <span style="color: #c678dd;">(</span>author . <span style="color: #98be65;">"Eric Neer"</span><span style="color: #c678dd;">)</span>
+            <span style="color: #c678dd;">(</span>name . <span style="color: #98be65;">"viewport"</span><span style="color: #c678dd;">)</span>
+            <span style="color: #c678dd;">(</span>content . <span style="color: #98be65;">"width=device-width, initial-scale=1"</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+     <span style="color: #a9a1e1;">(</span>title <span style="color: #51afef;">()</span> ,<span style="color: #51afef;">(</span><span style="color: #a9a1e1;">concat</span> <span style="color: #c678dd;">(</span><span style="color: #c678dd;">org-export-data</span> <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">plist-get</span> info <span style="color: #c678dd;">:title</span><span style="color: #98be65;">)</span> info<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span> <span style="color: #98be65;">" - Eric Neer"</span><span style="color: #a9a1e1;">)</span>
+     <span style="color: #a9a1e1;">(</span>link <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>href . <span style="color: #98be65;">"/static/styles.css"</span><span style="color: #c678dd;">)</span>
+            <span style="color: #c678dd;">(</span>rel . <span style="color: #98be65;">"stylesheet"</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+     <span style="color: #a9a1e1;">(</span>link <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>href . <span style="color: #98be65;">"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css"</span><span style="color: #c678dd;">)</span>
+            <span style="color: #c678dd;">(</span>rel . <span style="color: #98be65;">"stylesheet"</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+     <span style="color: #a9a1e1;">(</span>link <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>href . <span style="color: #98be65;">"/static/favicon.png"</span><span style="color: #c678dd;">)</span>
+            <span style="color: #c678dd;">(</span>rel . <span style="color: #98be65;">"icon"</span><span style="color: #c678dd;">)</span>
+            <span style="color: #c678dd;">(</span>type . <span style="color: #98be65;">"image/x-icon"</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+     <span style="color: #a9a1e1;">(</span>script <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>src . <span style="color: #98be65;">"https://polyfill.io/v3/polyfill.min.js?features=es6"</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+     <span style="color: #a9a1e1;">(</span>script <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>id . <span style="color: #98be65;">"MathJax-script"</span><span style="color: #c678dd;">)</span>
+              <span style="color: #c678dd;">(</span>async . <span style="color: #98be65;">""</span><span style="color: #c678dd;">)</span>
+              <span style="color: #c678dd;">(</span>src . <span style="color: #98be65;">"https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/site-body</span> <span style="color: #c678dd;">(</span>contents info<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #c678dd;">shr-dom-to-xml</span>
+   <span style="color: #51afef;">`</span><span style="color: #98be65;">(</span>body <span style="color: #a9a1e1;">()</span>
+     <span style="color: #a9a1e1;">(</span>div <span style="color: #51afef;">()</span>
+          ,<span style="color: #51afef;">(</span><span style="color: #c678dd;">ejneer/site-sidebar</span> info<span style="color: #51afef;">)</span>
+          <span style="color: #51afef;">(</span>div <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>class . <span style="color: #98be65;">"content"</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+               ,contents<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/site-sidebar</span> <span style="color: #c678dd;">(</span><span style="color: #c678dd;">info</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #c678dd;">shr-dom-to-xml</span>
+   <span style="color: #51afef;">`</span><span style="color: #98be65;">(</span>div <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">(</span>class . <span style="color: #98be65;">"sidebar"</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+     <span style="color: #a9a1e1;">(</span>div <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>class . <span style="color: #98be65;">"header"</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+          <span style="color: #51afef;">(</span>a <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>href . <span style="color: #98be65;">"/"</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+             <span style="color: #c678dd;">(</span>img <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>src . <span style="color: #98be65;">"/static/pic.jpeg"</span><span style="color: #a9a1e1;">)</span>
+                   <span style="color: #a9a1e1;">(</span>width . <span style="color: #98be65;">"150"</span><span style="color: #a9a1e1;">)</span>
+                   <span style="color: #a9a1e1;">(</span>style . <span style="color: #98be65;">"border-radius: 50%;"</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+          <span style="color: #51afef;">(</span>p <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>class . <span style="color: #98be65;">"lead"</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span> <span style="color: #98be65;">"Data Scientist &amp; Engineer"</span><span style="color: #51afef;">)</span>
+          <span style="color: #51afef;">(</span>p <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>class . <span style="color: #98be65;">"lead"</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span> <span style="color: #98be65;">"Mercury Insurance"</span><span style="color: #51afef;">)</span>
+          <span style="color: #51afef;">(</span>br<span style="color: #51afef;">)</span>
+          ,<span style="color: #51afef;">(</span><span style="color: #c678dd;">ejneer/site-sidebar-nav-link</span> <span style="color: #98be65;">"fa-solid fa-id-card"</span> <span style="color: #98be65;">"/cv.html"</span> <span style="color: #98be65;">"CV"</span><span style="color: #51afef;">)</span>
+          ,<span style="color: #51afef;">(</span><span style="color: #c678dd;">ejneer/site-sidebar-nav-link</span> <span style="color: #98be65;">"fa-brands fa-github"</span> <span style="color: #98be65;">"https://github.com/ejneer"</span> <span style="color: #98be65;">"GitHub"</span><span style="color: #51afef;">)</span>
+          ,<span style="color: #51afef;">(</span><span style="color: #c678dd;">ejneer/site-sidebar-nav-link</span> <span style="color: #98be65;">"fa-brands fa-linkedin"</span> <span style="color: #98be65;">"https://www.linkedin.com/in/eric-neer/"</span> <span style="color: #98be65;">"LinkedIn"</span><span style="color: #51afef;">)</span>
+          ,<span style="color: #51afef;">(</span><span style="color: #c678dd;">ejneer/site-footer</span> info<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/site-sidebar-nav-link</span> <span style="color: #c678dd;">(</span>icon link text<span style="color: #c678dd;">)</span>
+  <span style="color: #5B6268;">;; </span><span style="color: #5B6268;">simple helper to create a hyperlink with font awesome icon</span>
+  <span style="color: #c678dd;">(</span><span style="color: #c678dd;">shr-dom-to-xml</span>
+   <span style="color: #51afef;">`</span><span style="color: #98be65;">(</span>div <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">(</span>class . <span style="color: #98be65;">"sidebar-nav-item"</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+     <span style="color: #a9a1e1;">(</span>i <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>class . ,icon<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+     <span style="color: #a9a1e1;">(</span>a <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>href . ,link<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span> ,text<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/site-footer</span> <span style="color: #c678dd;">(</span><span style="color: #c678dd;">info</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #c678dd;">shr-dom-to-xml</span>
+   <span style="color: #51afef;">`</span><span style="color: #98be65;">(</span>div <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">(</span>class . <span style="color: #98be65;">"footer"</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+     <span style="color: #a9a1e1;">(</span>p <span style="color: #51afef;">()</span> <span style="color: #98be65;">"Made with "</span> ,<span style="color: #51afef;">(</span><span style="color: #a9a1e1;">plist-get</span> info <span style="color: #c678dd;">:creator</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/publish</span> <span style="color: #c678dd;">()</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">interactive</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #c678dd;">org-publish-all</span> t<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/find-main-proj</span> <span style="color: #c678dd;">(</span>proj-name<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #c678dd;">cl-find-if</span> <span style="color: #98be65;">(</span><span style="color: #51afef;">lambda</span> <span style="color: #a9a1e1;">(</span>x<span style="color: #a9a1e1;">)</span> <span style="color: #a9a1e1;">(</span><span style="color: #a9a1e1;">string=</span> <span style="color: #51afef;">(</span><span style="color: #a9a1e1;">car</span> x<span style="color: #51afef;">)</span> proj-name<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span> <span style="color: #dcaeea;">org-publish-project-alist</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">setq</span> ejneer/proj-name <span style="color: #98be65;">"ejneer:main"</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">setq</span> ejneer/proj-files <span style="color: #c678dd;">(</span><span style="color: #c678dd;">org-publish-get-base-files</span> <span style="color: #98be65;">(</span><span style="color: #c678dd;">ejneer/find-main-proj</span> ejneer/proj-name<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #5B6268;">;; </span><span style="color: #5B6268;">adapted from https://kitchingroup.cheme.cmu.edu/blog/2013/05/05/Getting-keyword-options-in-org-files/</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/get-file-keywords</span> <span style="color: #c678dd;">(</span>file-path<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">with-temp-buffer</span>
+    <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">insert-file-contents</span> file-path<span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #c678dd;">org-element-map</span>
+        <span style="color: #a9a1e1;">(</span><span style="color: #c678dd;">org-element-parse-buffer</span> <span style="color: #51afef;">'</span><span style="color: #ECBE7B;">element</span><span style="color: #a9a1e1;">)</span>
+        <span style="color: #51afef;">'</span><span style="color: #ECBE7B;">keyword</span>
+      <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">lambda</span> <span style="color: #51afef;">(</span>keyword<span style="color: #51afef;">)</span> <span style="color: #51afef;">(</span><span style="color: #a9a1e1;">cons</span> <span style="color: #c678dd;">(</span><span style="color: #c678dd;">org-element-property</span> <span style="color: #c678dd;">:key</span> keyword<span style="color: #c678dd;">)</span>
+                              <span style="color: #c678dd;">(</span><span style="color: #c678dd;">org-element-property</span> <span style="color: #c678dd;">:value</span> keyword<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/is-post-p</span> <span style="color: #c678dd;">(</span>file-path<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #a9a1e1;">member</span> <span style="color: #51afef;">'</span><span style="color: #98be65;">(</span><span style="color: #98be65;">"PROPERTY"</span> . <span style="color: #98be65;">"doctype post"</span><span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span><span style="color: #c678dd;">ejneer/get-file-keywords</span> file-path<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/get-file-export-env</span> <span style="color: #c678dd;">(</span>file-path<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">with-temp-buffer</span>
+    <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">insert-file-contents</span> file-path<span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #c678dd;">org-export-get-environment</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div></div></body></html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html><html lang="en"><head> <meta charset="utf-8" author="Eric Neer" name="viewport" content="width=device-width, initial-scale=1"></meta> <title>Quicksort - Eric Neer</title> <link href="/static/styles.css" rel="stylesheet"></link> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"></link> <link href="/static/favicon.png" rel="icon" type="image/x-icon"></link> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body> <div><div class="sidebar"> <div class="header"> <a href="/"> <img src="/static/pic.jpeg" width="150" style="border-radius: 50%;"></img></a> <p class="lead">Data Scientist & Engineer</p> <p class="lead">Mercury Insurance</p> <br></br><div class="sidebar-nav-item"> <i class="fa-solid fa-id-card"></i> <a href="/cv.html">CV</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-github"></i> <a href="https://github.com/ejneer">GitHub</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-linkedin"></i> <a href="https://www.linkedin.com/in/eric-neer/">LinkedIn</a></div><div class="footer"> <p>Made with <a href="https://www.gnu.org/software/emacs/">Emacs</a> 28.2 (<a href="https://orgmode.org">Org</a> mode 9.6)</p></div></div></div> <div class="content">
+<div id="outline-container-orgdacfb12" class="outline-2">
+<h2 id="orgdacfb12">Quicksort</h2>
+<div class="outline-text-2" id="text-orgdacfb12">
+
+<div id="org99748cd" class="figure">
+<p><img src="img/quicksort.svg" alt="quicksort.svg" class="org-svg" />
+</p>
+<p><span class="figure-number">Figure 1: </span>Using quicksort to sort the letters of the word &ldquo;QUICKSORT&rdquo;.  Pivot items are underlined.</p>
+</div>
+</div>
+
+
+<div id="outline-container-org695ac09" class="outline-3">
+<h3 id="org695ac09">Description</h3>
+<div class="outline-text-3" id="text-org695ac09">
+<p>
+Quicksort, like mergesort, is another divide and conquer sorting technique.
+The general strategy of quicksort is as follows:
+</p>
+
+<ol class="org-ol">
+<li>Given an array, choose an element to act as the &ldquo;pivot&rdquo; which will be used to partition the array.</li>
+<li>Separate the array in two, forming a group of elements smaller than the pivot and a group larger than the pivot.</li>
+<li>Recursively partition these two groups in the same manner as the prior steps.</li>
+<li>Combine all the partitions (no work is required as they are all sorted).</li>
+</ol>
+
+<p>
+The graph above shows how quicksort would sort the letters of the word &ldquo;QUICKSORT&rdquo;.
+Note that when partitioning has completed (only 1 letter arrays remain), the highlighted leaf nodes end up in sorted order when read left-to-right.
+This illustrates how the partitioning routine of quicksort is responsible for sorting, whereas the final merge step is trivial.
+</p>
+
+<p>
+Below, a numerical array is sorted with quicksort.
+Highlighted elements are undergoing sorting, with the pivot element highlighted a different color.
+A horizontal line represents the value (height) of the pivot.
+Note how on each iteration, values to the left of the pivot sit below the line, whereas values to the right sit above.
+The elements to the left of the pivot are not themselves sorted, but they are all less than the pivot.
+The reverse is true for those elements on the right.
+</p>
+
+
+<div id="org4c71095" class="figure">
+<p><img src="img/quicksorter.gif" alt="quicksorter.gif" />
+</p>
+<p><span class="figure-number">Figure 2: </span>Using quicksort to sort a numerical array.  Highlighted elements are being sorted, with the height of the pivot represented as a horizontal line.</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org55c28de" class="outline-3">
+<h3 id="org55c28de">Implementation</h3>
+<div class="outline-text-3" id="text-org55c28de">
+<p>
+<code>quick_sort</code> facilitates the recursive partitioning, while <code>swap</code> is a helper to cleanly move elements around.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">quick_sort</span>(array, low_idx, high_idx):
+    <span style="color: #83898d;">"""</span>
+<span style="color: #83898d;">    Sort an array using the quick sort algorithm.</span>
+
+<span style="color: #83898d;">    &gt;&gt;&gt; quick_sort([6, 7, 13, 1, 12, 8, 14, 2], 0, 7)</span>
+<span style="color: #83898d;">    [1, 2, 6, 7, 8, 12, 13, 14]</span>
+<span style="color: #83898d;">    """</span>
+    <span style="color: #51afef;">if</span> low_idx &lt; <span style="color: #dcaeea;">high_idx</span>:
+        <span style="color: #dcaeea;">_</span>, <span style="color: #dcaeea;">pivot_idx</span> = partition(array, low_idx, high_idx)
+        quick_sort(array, low_idx, pivot_idx - <span style="color: #da8548; font-weight: bold;">1</span>)
+        quick_sort(array, pivot_idx + <span style="color: #da8548; font-weight: bold;">1</span>, high_idx)
+    <span style="color: #51afef;">return</span> array
+
+
+<span style="color: #51afef;">def</span> <span style="color: #c678dd;">swap</span>(array, first_idx, second_idx):
+    <span style="color: #83898d;">"""</span>
+<span style="color: #83898d;">    Swap two elements in an array.</span>
+
+<span style="color: #83898d;">    &gt;&gt;&gt; swap([13, 31], 0, 1)</span>
+<span style="color: #83898d;">    [31, 13]</span>
+<span style="color: #83898d;">    """</span>
+    <span style="color: #dcaeea;">array</span>[<span style="color: #dcaeea;">first_idx</span>], <span style="color: #dcaeea;">array</span>[<span style="color: #dcaeea;">second_idx</span>] = array[second_idx], array[first_idx]
+    <span style="color: #51afef;">return</span> array
+</pre>
+</div>
+
+<p>
+As mentioned above, the partitioning of the array does the actual sorting work, thus all the interesting details are in <code>partition</code>.
+This function selects the last element of the given (sub-)array as the pivot and traverses the rest of the (sub-)array, comparing the pivot to each value.
+If an encountered value is less than the pivot, it is swapped to the end of the left side (i.e. values less than the pivot) of the values being partitioned.
+Two indices are involved, one to iterate over the array, and the other to keep track of the last value encountered that is less than the pivot, used in swapping.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #51afef;">def</span> <span style="color: #c678dd;">partition</span>(array, low_idx, high_idx):
+    <span style="color: #83898d;">"""</span>
+<span style="color: #83898d;">    Partition array into arrays of items smaller and larger than pivot.</span>
+
+<span style="color: #83898d;">    &gt;&gt;&gt; partition([2, 8, 7, 1, 3, 5, 6, 4], 0, 7)</span>
+<span style="color: #83898d;">    ([2, 1, 3, 4, 7, 5, 6, 8], 3)</span>
+<span style="color: #83898d;">    """</span>
+    <span style="color: #dcaeea;">i</span> = low_idx - <span style="color: #da8548; font-weight: bold;">1</span>
+    <span style="color: #dcaeea;">pivot</span> = array[high_idx]
+    <span style="color: #51afef;">for</span> j <span style="color: #51afef;">in</span> <span style="color: #c678dd;">range</span>(low_idx, high_idx):
+        <span style="color: #51afef;">if</span> array[j] &lt;= <span style="color: #dcaeea;">pivot</span>:
+            i += <span style="color: #da8548; font-weight: bold;">1</span>
+            swap(array, i, j)
+    swap(array, i + <span style="color: #da8548; font-weight: bold;">1</span>, high_idx)
+    <span style="color: #dcaeea;">pivot_idx</span> = i + <span style="color: #da8548; font-weight: bold;">1</span>
+    <span style="color: #51afef;">return</span> array, pivot_idx
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-org60e0b69" class="outline-3">
+<h3 id="org60e0b69">Complexity</h3>
+<div class="outline-text-3" id="text-org60e0b69">
+<p>
+Choosing a partition has been glossed over thus far, but plays a central role in the performance of quicksort.
+As presented here, the pivot is always assumed to be the last element of the array under investigation.
+There exist many variations on this, including assuming the first, middle, or taking a random element as a pivot.
+</p>
+
+<p>
+Worst case performance occurs when the chosen pivot results in one empty and one size \((n - 1)\) array after partitioning.
+This would result in \(O(n^2)\) behavior.
+Conversely, the best case is when partitioning results in two balanced arrays yielding \(O(n \ln{n})\) performance.
+In reality, the <b>average</b> expected performance tends more toward the best case.
+</p>
+</div>
+</div>
+
+<div id="outline-container-org653fb82" class="outline-3">
+<h3 id="org653fb82">Tracking Sorting Progression</h3>
+<div class="outline-text-3" id="text-org653fb82">
+<p>
+The following class is used to track the progression of sorting which can be used to visualize how sorting evolves.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-python"><span style="color: #51afef;">import</span> pandas <span style="color: #51afef;">as</span> pd
+
+<span style="color: #51afef;">class</span> <span style="color: #ECBE7B;">QuickSorter</span>(<span style="color: #c678dd;">object</span>):
+    <span style="color: #dcaeea;">STATUS_NONE</span> = <span style="color: #98be65;">"none"</span>
+    <span style="color: #dcaeea;">STATUS_SORTING</span> = <span style="color: #98be65;">"sorting"</span>
+    <span style="color: #dcaeea;">STATUS_PIVOT</span> = <span style="color: #98be65;">"pivot"</span>
+
+    <span style="color: #51afef;">def</span> <span style="color: #c678dd;">__init__</span>(<span style="color: #51afef;">self</span>, data):
+        <span style="color: #51afef;">self</span>.<span style="color: #dcaeea;">_data</span> = data
+        <span style="color: #51afef;">self</span>.<span style="color: #dcaeea;">_snapshots</span> = []
+        <span style="color: #51afef;">self</span>.<span style="color: #dcaeea;">_sorted</span> = <span style="color: #a9a1e1;">False</span>
+        <span style="color: #51afef;">for</span> idx, value <span style="color: #51afef;">in</span> <span style="color: #c678dd;">enumerate</span>(<span style="color: #51afef;">self</span>._data):
+            <span style="color: #51afef;">self</span>._snapshots.append(
+                {
+                    <span style="color: #98be65;">"position"</span>: idx,
+                    <span style="color: #98be65;">"value"</span>: value,
+                    <span style="color: #98be65;">"iteration"</span>: <span style="color: #da8548; font-weight: bold;">0</span>,
+                    <span style="color: #98be65;">"status"</span>: QuickSorter.STATUS_NONE,
+                    <span style="color: #98be65;">"pivot"</span>: <span style="color: #da8548; font-weight: bold;">0</span>
+                }
+            )
+        <span style="color: #51afef;">self</span>.<span style="color: #dcaeea;">_iteration_count</span> = <span style="color: #da8548; font-weight: bold;">1</span>
+
+    @<span style="color: #c678dd;">property</span>
+    <span style="color: #51afef;">def</span> <span style="color: #c678dd;">data</span>(<span style="color: #51afef;">self</span>):
+        <span style="color: #51afef;">return</span> <span style="color: #51afef;">self</span>._data
+
+    <span style="color: #ECBE7B;">@data.setter</span>
+    <span style="color: #51afef;">def</span> <span style="color: #c678dd;">data</span>(<span style="color: #51afef;">self</span>, new_data):
+        <span style="color: #83898d;">"""</span>
+<span style="color: #83898d;">        Ensures a "sorted" state is invalidated on data change.</span>
+<span style="color: #83898d;">        """</span>
+        <span style="color: #51afef;">self</span>.<span style="color: #dcaeea;">_data</span> = new_data
+        <span style="color: #51afef;">self</span>.<span style="color: #c678dd;">sorted</span> = <span style="color: #a9a1e1;">False</span>
+
+    @<span style="color: #c678dd;">property</span>
+    <span style="color: #51afef;">def</span> <span style="color: #c678dd;">snapshots</span>(<span style="color: #51afef;">self</span>):
+        <span style="color: #51afef;">return</span> pd.DataFrame.from_records(<span style="color: #51afef;">self</span>._snapshots)
+
+    <span style="color: #51afef;">def</span> <span style="color: #c678dd;">quick_sort</span>(<span style="color: #51afef;">self</span>, low_idx, high_idx):
+        <span style="color: #51afef;">if</span> low_idx &lt; <span style="color: #dcaeea;">high_idx</span>:
+            <span style="color: #dcaeea;">_</span>, <span style="color: #dcaeea;">pivot_idx</span> = <span style="color: #51afef;">self</span>.partition(low_idx, high_idx)
+            <span style="color: #51afef;">self</span>._snapshot(low_idx, high_idx, pivot_idx)
+            <span style="color: #51afef;">self</span>.quick_sort(low_idx, pivot_idx - <span style="color: #da8548; font-weight: bold;">1</span>)
+            <span style="color: #51afef;">self</span>.quick_sort(pivot_idx + <span style="color: #da8548; font-weight: bold;">1</span>, high_idx)
+
+    <span style="color: #51afef;">def</span> <span style="color: #c678dd;">partition</span>(<span style="color: #51afef;">self</span>, low_idx, high_idx):
+        <span style="color: #dcaeea;">i</span> = low_idx - <span style="color: #da8548; font-weight: bold;">1</span>
+        <span style="color: #dcaeea;">pivot</span> = <span style="color: #51afef;">self</span>.data[high_idx]
+        <span style="color: #51afef;">for</span> j <span style="color: #51afef;">in</span> <span style="color: #c678dd;">range</span>(low_idx, high_idx):
+            <span style="color: #51afef;">if</span> <span style="color: #51afef;">self</span>.data[j] &lt;= <span style="color: #dcaeea;">pivot</span>:
+                i += <span style="color: #da8548; font-weight: bold;">1</span>
+                swap(<span style="color: #51afef;">self</span>.data, i, j)
+        swap(<span style="color: #51afef;">self</span>.data, i + <span style="color: #da8548; font-weight: bold;">1</span>, high_idx)
+        <span style="color: #dcaeea;">pivot_idx</span> = i + <span style="color: #da8548; font-weight: bold;">1</span>
+        <span style="color: #51afef;">return</span> <span style="color: #51afef;">self</span>.data, pivot_idx
+
+    <span style="color: #51afef;">def</span> <span style="color: #c678dd;">_snapshot</span>(<span style="color: #51afef;">self</span>, low_idx, high_idx, pivot_idx):
+        <span style="color: #83898d;">"""</span>
+<span style="color: #83898d;">        Copy self.data, indicating if each element is currently being sorted.</span>
+<span style="color: #83898d;">        """</span>
+        <span style="color: #51afef;">for</span> idx, value <span style="color: #51afef;">in</span> <span style="color: #c678dd;">enumerate</span>(<span style="color: #51afef;">self</span>._data):
+            <span style="color: #51afef;">self</span>._snapshots.append(
+                {
+                    <span style="color: #98be65;">"position"</span>: idx,
+                    <span style="color: #98be65;">"value"</span>: value,
+                    <span style="color: #98be65;">"iteration"</span>: <span style="color: #51afef;">self</span>._iteration_count,
+                    <span style="color: #98be65;">"status"</span>: QuickSorter.STATUS_PIVOT
+                    <span style="color: #51afef;">if</span> idx == pivot_idx
+                    <span style="color: #51afef;">else</span> QuickSorter.STATUS_SORTING
+                    <span style="color: #51afef;">if</span> idx <span style="color: #51afef;">in</span> <span style="color: #c678dd;">range</span>(low_idx, high_idx + <span style="color: #da8548; font-weight: bold;">1</span>)
+                    <span style="color: #51afef;">else</span> QuickSorter.STATUS_NONE,
+                    <span style="color: #98be65;">"pivot"</span>: <span style="color: #51afef;">self</span>.data[pivot_idx]
+                }
+            )
+        <span style="color: #51afef;">self</span>._iteration_count += <span style="color: #da8548; font-weight: bold;">1</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div></div></body></html>

@@ -1,0 +1,456 @@
+<!DOCTYPE html><html lang="en"><head> <meta charset="utf-8" author="Eric Neer" name="viewport" content="width=device-width, initial-scale=1"></meta> <title>Bills of Material - Eric Neer</title> <link href="/static/styles.css" rel="stylesheet"></link> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"></link> <link href="/static/favicon.png" rel="icon" type="image/x-icon"></link> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body> <div><div class="sidebar"> <div class="header"> <a href="/"> <img src="/static/pic.jpeg" width="150" style="border-radius: 50%;"></img></a> <p class="lead">Data Scientist & Engineer</p> <p class="lead">Mercury Insurance</p> <br></br><div class="sidebar-nav-item"> <i class="fa-solid fa-id-card"></i> <a href="/cv.html">CV</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-github"></i> <a href="https://github.com/ejneer">GitHub</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-linkedin"></i> <a href="https://www.linkedin.com/in/eric-neer/">LinkedIn</a></div><div class="footer"> <p>Made with <a href="https://www.gnu.org/software/emacs/">Emacs</a> 28.2 (<a href="https://orgmode.org">Org</a> mode 9.6)</p></div></div></div> <div class="content">
+
+<div id="outline-container-org023cba2" class="outline-2">
+<h2 id="org023cba2">Bills of Material</h2>
+<div class="outline-text-2" id="text-org023cba2">
+<p>
+In manufacturing, a bill of materials (BOM) defines all of the items required to
+produce a good. Often times this consists of raw materials (e.g. steel,
+aluminum) that are transformed or other components that are assembled to make
+the finished product. It may also contain ancillary items used during
+manufacturing, such as tooling or consumable chemicals.
+</p>
+
+
+<div id="org88b8d99" class="figure">
+<p><img src="img/bom-graph.svg" alt="bom-graph.svg" class="org-svg" />
+</p>
+<p><span class="figure-number">Figure 1: </span>Hypothetical multi-level bill of materials for a pen. (Lunn and Neff 1992)</p>
+</div>
+</div>
+
+
+<div id="outline-container-org23f937f" class="outline-3">
+<h3 id="org23f937f">Data Structures</h3>
+<div class="outline-text-3" id="text-org23f937f">
+<p>
+Looking at the bill of materials depiction above, it is obvious that a BOM is
+really just a <a href="https://en.wikipedia.org/wiki/Tree_structure">tree</a> whose nodes are components (or subassemblies) and edges
+indicate a component&rsquo;s belonging to its parent&rsquo;s BOM. The quantity of a
+component in a parent&rsquo;s BOM would also be indicated by an edge, as it is a
+property of the relationship between the parent and component.
+</p>
+
+<p>
+Most material requirements planning (MRP) systems persist data using a typical
+relational database which stores information in a tabular fashion. Thus, the
+information encoded in the BOM tree structure must be transformed to fit within
+a table structure. This is typically done using an <a href="https://en.wikipedia.org/wiki/Adjacency_list">adjacency list</a> which may be
+easily encoded as a table, with 1 row per relationship. The table below
+represents the pen bill of materials as it may appear in a database.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sqlite"><span style="color: #51afef;">SELECT</span> * <span style="color: #51afef;">FROM</span> bom
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Component</th>
+<th scope="col" class="org-left">Parent</th>
+<th scope="col" class="org-right">Quantity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Pen</td>
+<td class="org-left">&#xa0;</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Lower Pen</td>
+<td class="org-left">Pen</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Upper Barrel</td>
+<td class="org-left">Pen</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Ink</td>
+<td class="org-left">Pen</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Inner</td>
+<td class="org-left">Lower Pen</td>
+<td class="org-right">2.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Point</td>
+<td class="org-left">Lower Pen</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Outer</td>
+<td class="org-left">Lower Pen</td>
+<td class="org-right">2.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Sleeve</td>
+<td class="org-left">Upper Barrel</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Clip</td>
+<td class="org-left">Upper Barrel</td>
+<td class="org-right">2.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Tubing</td>
+<td class="org-left">Inner</td>
+<td class="org-right">5.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Tubing</td>
+<td class="org-left">Outer</td>
+<td class="org-right">3.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Top</td>
+<td class="org-left">Sleeve</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Tube</td>
+<td class="org-left">Sleeve</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Steel</td>
+<td class="org-left">Clip</td>
+<td class="org-right">4.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Tubing</td>
+<td class="org-left">Tube</td>
+<td class="org-right">2.0</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div id="outline-container-orgc6b6e5b" class="outline-3">
+<h3 id="orgc6b6e5b">Applications</h3>
+<div class="outline-text-3" id="text-orgc6b6e5b">
+<p>
+With the BOM set up as above, there are some interesting questions we can answer
+with SQL queries.
+</p>
+</div>
+
+<div id="outline-container-org862fe12" class="outline-4">
+<h4 id="org862fe12">Finding Components of an (Sub-)Assembly</h4>
+<div class="outline-text-4" id="text-org862fe12">
+<p>
+Finding all components that comprise a particular assembly&rsquo;s bill of material is
+a common MRP question. Obtaining a complete BOM requires finding the immediate
+children of the assembly, followed by children of the children, and so forth.
+This is complicated by the fact that we generally do not know the depth of a
+particular BOM.
+</p>
+
+<p>
+The solution is to recursively find children of a component until we&rsquo;ve reached
+a component that has no children (a leaf node in tree parlance).
+Algorithmically, this is referred to as a <a href="https://en.wikipedia.org/wiki/Breadth-first_search">breadth (BFS)</a> or <a href="https://en.wikipedia.org/wiki/Depth-first_search">depth-first search
+(DFS)</a>, depending on the order in which results are reported.
+</p>
+
+<p>
+Most database flavors implement this using a <a href="https://www.essentialsql.com/recursive-ctes-explained/">recursive common table expression
+(CTE)</a>. Using our Pen bill of materials example, the below SQL query is how a
+recursive CTE would be implemented in SQLite to find all components of the Upper
+Barrel subassembly.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sqlite"><span style="color: #5B6268;">-- </span><span style="color: #5B6268;">A depth-first search of the Upper Barrel subassembly</span>
+<span style="color: #51afef;">WITH</span> <span style="color: #51afef;">RECURSIVE</span>
+recursive_bom(Component, <span style="color: #51afef;">Level</span>) <span style="color: #51afef;">AS</span> (
+    <span style="color: #5B6268;">-- </span><span style="color: #5B6268;">The root of the tree, i.e. the component whose BOM we want</span>
+    <span style="color: #51afef;">VALUES</span>(<span style="color: #98be65;">'Upper Barrel'</span>, <span style="color: #da8548; font-weight: bold;">0</span>)
+    <span style="color: #51afef;">UNION</span> <span style="color: #51afef;">ALL</span>
+    <span style="color: #51afef;">SELECT</span> bom.Component, recursive_bom.<span style="color: #51afef;">level</span> + <span style="color: #da8548; font-weight: bold;">1</span>
+    <span style="color: #51afef;">FROM</span> bom <span style="color: #51afef;">JOIN</span> recursive_bom <span style="color: #51afef;">ON</span> bom.Parent = recursive_bom.Component
+    <span style="color: #51afef;">ORDER</span> <span style="color: #51afef;">BY</span> recursive_bom.<span style="color: #51afef;">level</span> + <span style="color: #da8548; font-weight: bold;">1</span> <span style="color: #51afef;">DESC</span>
+)
+<span style="color: #5B6268;">-- </span><span style="color: #5B6268;">Add leading periods to help visualize bom depth</span>
+<span style="color: #51afef;">SELECT</span> <span style="color: #51afef;">level</span>, printf(<span style="color: #98be65;">'%.*c'</span>, <span style="color: #51afef;">level</span> * <span style="color: #da8548; font-weight: bold;">3</span>, <span style="color: #98be65;">'.'</span>) || Component <span style="color: #51afef;">AS</span> Component  <span style="color: #51afef;">FROM</span> recursive_bom
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">Level</th>
+<th scope="col" class="org-left">Component</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">0</td>
+<td class="org-left">.Upper Barrel</td>
+</tr>
+
+<tr>
+<td class="org-right">1</td>
+<td class="org-left">&#x2026;Clip</td>
+</tr>
+
+<tr>
+<td class="org-right">2</td>
+<td class="org-left">&#x2026;&#x2026;Steel</td>
+</tr>
+
+<tr>
+<td class="org-right">1</td>
+<td class="org-left">&#x2026;Sleeve</td>
+</tr>
+
+<tr>
+<td class="org-right">2</td>
+<td class="org-left">&#x2026;&#x2026;Top</td>
+</tr>
+
+<tr>
+<td class="org-right">2</td>
+<td class="org-left">&#x2026;&#x2026;Tube</td>
+</tr>
+
+<tr>
+<td class="org-right">3</td>
+<td class="org-left">&#x2026;&#x2026;&#x2026;Tubing</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+
+<div id="outline-container-org7b1050a" class="outline-4">
+<h4 id="org7b1050a">Finding Total Quantities Required for All Components</h4>
+<div class="outline-text-4" id="text-org7b1050a">
+<p>
+Another important question is how many of each component is required to build a
+complete assembly. For example, looking at the BOM graph, it can be seen that
+tubing is required in multiple subassemblies, namely the Inner, Outer, and Tube.
+To build a complete pen, we would want to know the total amount of tubing
+required across all components, regardless of bom depth.
+</p>
+
+<p>
+Again a recursive query is used, with the added complexity of accumulating all
+quantities for identical components along the way. Accumulating component
+quantities is accomplished by the added <code>sum()</code> and corresponding <code>GROUP BY</code>
+clause in the sql query.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sqlite"><span style="color: #51afef;">WITH</span> <span style="color: #51afef;">RECURSIVE</span>
+recursive_bom(Component, Quantity) <span style="color: #51afef;">AS</span> (
+    <span style="color: #5B6268;">-- </span><span style="color: #5B6268;">The root of the tree, i.e. the component whose BOM we want</span>
+    <span style="color: #51afef;">VALUES</span>(<span style="color: #98be65;">'Pen'</span>, <span style="color: #da8548; font-weight: bold;">1</span>)
+    <span style="color: #51afef;">UNION</span> <span style="color: #51afef;">ALL</span>
+    <span style="color: #51afef;">SELECT</span> bom.Component, bom.Quantity * recursive_bom.Quantity
+    <span style="color: #51afef;">FROM</span> bom <span style="color: #51afef;">JOIN</span> recursive_bom <span style="color: #51afef;">ON</span> bom.Parent = recursive_bom.Component
+  )
+<span style="color: #51afef;">SELECT</span> Component, <span style="color: #c678dd;">sum</span>(Quantity) <span style="color: #51afef;">AS</span> [Total Qty Required] <span style="color: #51afef;">FROM</span> recursive_bom
+<span style="color: #51afef;">GROUP</span> <span style="color: #51afef;">BY</span> Component
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Component</th>
+<th scope="col" class="org-right">Total Qty Required</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Clip</td>
+<td class="org-right">2.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Ink</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Inner</td>
+<td class="org-right">2.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Lower Pen</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Outer</td>
+<td class="org-right">2.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Pen</td>
+<td class="org-right">1</td>
+</tr>
+
+<tr>
+<td class="org-left">Point</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Sleeve</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Steel</td>
+<td class="org-right">8.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Top</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Tube</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Tubing</td>
+<td class="org-right">18.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Upper Barrel</td>
+<td class="org-right">1.0</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Thus, in order to build 1 Pen assembly, a total of 18 Tubing is required. To
+understand this, we can examine all components that require Tubing in their BOM.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sqlite"><span style="color: #51afef;">SELECT</span> * <span style="color: #51afef;">FROM</span> bom <span style="color: #51afef;">WHERE</span> Component <span style="color: #51afef;">IN</span> (<span style="color: #98be65;">'Tubing'</span>)
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-left" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">Component</th>
+<th scope="col" class="org-left">Parent</th>
+<th scope="col" class="org-right">Quantity</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Tubing</td>
+<td class="org-left">Inner</td>
+<td class="org-right">5.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Tubing</td>
+<td class="org-left">Outer</td>
+<td class="org-right">3.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Tubing</td>
+<td class="org-left">Tube</td>
+<td class="org-right">2.0</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Tracing the ancestry of each parent all the way to the top level Pen:
+</p>
+
+<ul class="org-ul">
+<li>Inner 5 x 2 x 1 = 10 Tubing
+<ul class="org-ul">
+<li>5 Tubing is required for each Inner subassembly.</li>
+<li>2 Inners are required for each Lower Pen.</li>
+<li>1 Lower Pen is required for each Pen.</li>
+</ul></li>
+<li>Outer 3 x 2 x 1 = 6 Tubing)
+<ul class="org-ul">
+<li>3 Tubing is required for each Outer subassembly.</li>
+<li>2 Outers are required for each Lower Pen.</li>
+<li>1 Lower Pen is required for each Pen.</li>
+</ul></li>
+<li>Tube 2 x 1 x 1 x 1 = 2 Tubing
+<ul class="org-ul">
+<li>2 Tubing is required for each Tube.</li>
+<li>1 Tube is required for each Sleeve.</li>
+<li>1 Sleeve is required for each Upper Barrel.</li>
+<li>1 Upper Barrel is required for each Pen.</li>
+</ul></li>
+<li>Grand total of 18 Tubing is required per Pen assembly.</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div></div></body></html>

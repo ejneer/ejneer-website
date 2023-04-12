@@ -1,0 +1,719 @@
+<!DOCTYPE html><html lang="en"><head> <meta charset="utf-8" author="Eric Neer" name="viewport" content="width=device-width, initial-scale=1"></meta> <title>Binary Trees - Eric Neer</title> <link href="/static/styles.css" rel="stylesheet"></link> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"></link> <link href="/static/favicon.png" rel="icon" type="image/x-icon"></link> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body> <div><div class="sidebar"> <div class="header"> <a href="/"> <img src="/static/pic.jpeg" width="150" style="border-radius: 50%;"></img></a> <p class="lead">Data Scientist & Engineer</p> <p class="lead">Mercury Insurance</p> <br></br><div class="sidebar-nav-item"> <i class="fa-solid fa-id-card"></i> <a href="/cv.html">CV</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-github"></i> <a href="https://github.com/ejneer">GitHub</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-linkedin"></i> <a href="https://www.linkedin.com/in/eric-neer/">LinkedIn</a></div><div class="footer"> <p>Made with <a href="https://www.gnu.org/software/emacs/">Emacs</a> 28.2 (<a href="https://orgmode.org">Org</a> mode 9.6)</p></div></div></div> <div class="content">
+<div id="outline-container-org1a87d05" class="outline-2">
+<h2 id="org1a87d05">Binary Trees</h2>
+<div class="outline-text-2" id="text-org1a87d05">
+
+<div id="org7fc6e84" class="figure">
+<p><img src="img/binarytree.svg" alt="binarytree.svg" class="org-svg" />
+</p>
+</div>
+
+<p>
+This chapter introduces one of the most fundamental structures in computer
+science: binary trees. The use of the word tree here comes from the fact that,
+when we draw them, the resultant drawing often resembles the trees found in a
+forest. There are many ways of defining binary trees. Mathematically, a binary
+tree is a connected, undirected, finite graph with no cycles, and no vertex of
+degree greater than three.
+</p>
+
+<p>
+For most computer science applications, binary trees are rooted: A special node
+<code>r</code>, of degree at most two, is called the root of the tree. For every node <code>u !=
+r</code>, the second node on the path from <code>u</code> to <code>r</code> is called the parent of <code>u</code>.
+Each of the other nodes adjacent to <code>u</code> is called a child of <code>u</code>. Most of the
+binary trees we are interested in are ordered, so we distinguish between the
+left child and right child of <code>u</code>.
+</p>
+
+<p>
+In illustrations, binary trees are usually drawn from the root downward, with
+the root at the top of the drawing and the left and right children respectively
+given by left and right positions in the drawing.
+</p>
+
+<p>
+Because binary trees are so important, a certain terminology has developed for
+them: The depth of a node <code>u</code> in a binary tree is the length of the path from
+<code>u</code> to the root of the tree. If a node <code>w</code> is on the path from <code>u</code> to <code>r</code>, then
+<code>w</code> is called an ancestor of <code>u</code> and <code>u</code> a descendant of <code>w</code>. The subtree of a
+node <code>u</code> is the binary tree that is rooted at <code>u</code> and contains all of <code>u</code>&rsquo;s
+descendants. The height of a node <code>u</code> is the length of the longest path from <code>u</code>
+to one of its descendants. The height of a tree is the height of its root. A
+node <code>u</code> is a leaf if it has no children.
+</p>
+
+<p>
+We sometimes think of the tree as being augmented with external nodes. Any node
+that does not have a left child has an external node as its left child, and,
+correspondingly, any node that does not have a right child has an external node
+as its right child. It is easy to verify, by induction, that a binary tree with
+<code>n &gt;= 1</code> real nodes has <code>n + 1</code> external nodes.
+</p>
+</div>
+</div>
+<div id="outline-container-org0e83696" class="outline-2">
+<h2 id="org0e83696">A Basic Binary Tree</h2>
+<div class="outline-text-2" id="text-org0e83696">
+<p>
+Simplest way to represent a node <code>u</code> is to store the at most three neighbors
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defclass</span> <span style="color: #ECBE7B;">binary-tree-node</span> <span style="color: #c678dd;">()</span>
+  <span style="color: #5B6268;">; setters for left/right that auto link parent?</span>
+  <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>left <span style="color: #c678dd;">:initarg</span> <span style="color: #c678dd;">:left</span>
+        <span style="color: #c678dd;">:accessor</span> left
+        <span style="color: #c678dd;">:initform</span> nil<span style="color: #98be65;">)</span>
+  <span style="color: #98be65;">(</span>right <span style="color: #c678dd;">:initarg</span> <span style="color: #c678dd;">:right</span>
+         <span style="color: #c678dd;">:accessor</span> right
+         <span style="color: #c678dd;">:initform</span> nil<span style="color: #98be65;">)</span>
+  <span style="color: #98be65;">(</span>parent <span style="color: #c678dd;">:initarg</span> <span style="color: #c678dd;">:parent</span>
+          <span style="color: #c678dd;">:accessor</span> parent
+          <span style="color: #c678dd;">:initform</span> nil<span style="color: #98be65;">)</span>
+  <span style="color: #98be65;">(</span>value <span style="color: #c678dd;">:initarg</span> <span style="color: #c678dd;">:value</span>
+         <span style="color: #c678dd;">:accessor</span> value
+         <span style="color: #c678dd;">:initform</span> nil<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #5B6268;">; </span><span style="color: #5B6268;">default methods</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">left</span> <span style="color: #c678dd;">(</span>obj<span style="color: #c678dd;">)</span> nil<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">right</span> <span style="color: #c678dd;">(</span>obj<span style="color: #c678dd;">)</span> nil<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">parent</span> <span style="color: #c678dd;">(</span>obj<span style="color: #c678dd;">)</span> nil<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">value</span> <span style="color: #c678dd;">(</span>obj<span style="color: #c678dd;">)</span> nil<span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+The binary tree itself can then be represented by a reference to its root node, <code>r</code>.
+</p>
+
+<p>
+We can compute the depth of a node <code>u</code> in a binary tree by counting the number
+of steps on the path from <code>u</code> to the root.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">depth</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>u binary-tree-node<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">let</span> <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>d <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">loop</span> while <span style="color: #a9a1e1;">(</span>parent u<span style="color: #a9a1e1;">)</span>
+          do <span style="color: #a9a1e1;">(</span>incf d<span style="color: #a9a1e1;">)</span>
+          do <span style="color: #a9a1e1;">(</span>setf u <span style="color: #51afef;">(</span>parent u<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    d<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orgc43f0aa" class="outline-3">
+<h3 id="orgc43f0aa">Recursive Algorithms</h3>
+<div class="outline-text-3" id="text-orgc43f0aa">
+<p>
+To compute the size of (# nodes) in a binary tree rooted at node <code>u</code>, we
+recursively compute the sizes of the two subtrees rooted at the children of <code>u</code>,
+sum up these sizes, and add one:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">size</span> <span style="color: #c678dd;">(</span>obj<span style="color: #c678dd;">)</span> <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">size</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>u binary-tree-node<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #83898d;">"Compute the size of a binary tree rooted at U"</span>
+  <span style="color: #c678dd;">(</span>+ <span style="color: #da8548; font-weight: bold;">1</span> <span style="color: #98be65;">(</span>size <span style="color: #a9a1e1;">(</span>left u<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span>size <span style="color: #a9a1e1;">(</span>right u<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+To compute the height of a node <code>u</code>, we can compute the height of <code>u</code>&rsquo;s two
+subtrees, take the maximum, and add one:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">height</span> <span style="color: #c678dd;">(</span>obj<span style="color: #c678dd;">)</span> <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">height</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>u binary-tree-node<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #83898d;">"Compute the height of a binary tree rooted at U"</span>
+  <span style="color: #c678dd;">(</span>+ <span style="color: #da8548; font-weight: bold;">1</span> <span style="color: #98be65;">(</span>max <span style="color: #a9a1e1;">(</span>height <span style="color: #51afef;">(</span>left u<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span> <span style="color: #a9a1e1;">(</span>height <span style="color: #51afef;">(</span>right u<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org4c0ad80" class="outline-3">
+<h3 id="org4c0ad80">Traversing Binary Trees</h3>
+<div class="outline-text-3" id="text-org4c0ad80">
+<p>
+The two algorithms from the previous section both use recursion to visit all the
+nodes in a binary tree. Each of them visits the nodes of the binary tree in the
+same order as the following code:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">traverse</span> <span style="color: #c678dd;">(</span>obj<span style="color: #c678dd;">)</span> nil<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defmethod</span> <span style="color: #c678dd;">traverse</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>u binary-tree-node<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span>print u<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span>traverse <span style="color: #98be65;">(</span>left u<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span>traverse <span style="color: #98be65;">(</span>right u<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+Using recursion this way produces very short, simple code, but it can also be
+problematic. The maximum depth of the recursion is given by the maximum depth of
+a node in the binary tree, i.e. the tree&rsquo;s height. If the height of a tree is
+very large, then this recursion could very well use more stack space than is
+available, causing a crash.
+</p>
+
+<p>
+To traverese a binary tree without recursion, you can use an algorithm that
+relies on where it came from to determine where it will go next. If we arrive at
+a node <code>u</code> from <code>(parent u)</code>, then the next thing to do is to visit <code>(left u)</code>.
+If we arrive at <code>u</code> from <code>(left u)</code>, then the next thing to do is to visit
+<code>(right u)</code>. If we arrive at <code>u</code> from <code>(right u)</code>, then we are done visiting
+<code>u</code>&rsquo;s subtree, and so we return to <code>(parent u)</code>. Implemented in the following:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">traverse2</span> <span style="color: #c678dd;">()</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">flet</span> <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>get-next <span style="color: #51afef;">(</span>curr prev<span style="color: #51afef;">)</span>
+                  <span style="color: #51afef;">(</span><span style="color: #51afef;">cond</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>eql prev <span style="color: #a9a1e1;">(</span>parent curr<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+                          <span style="color: #98be65;">(</span><span style="color: #51afef;">cond</span> <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">(</span>left curr<span style="color: #51afef;">)</span> <span style="color: #51afef;">(</span>left curr<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+                               <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">(</span>right curr<span style="color: #51afef;">)</span> <span style="color: #51afef;">(</span>right curr<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+                               <span style="color: #a9a1e1;">(</span>t <span style="color: #51afef;">(</span>parent curr<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+                        <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>eql prev <span style="color: #a9a1e1;">(</span>left curr<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+                         <span style="color: #98be65;">(</span><span style="color: #51afef;">if</span> <span style="color: #a9a1e1;">(</span>right curr<span style="color: #a9a1e1;">)</span>
+                             <span style="color: #a9a1e1;">(</span>right curr<span style="color: #a9a1e1;">)</span>
+                             <span style="color: #a9a1e1;">(</span>parent curr<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+                        <span style="color: #c678dd;">(</span>t <span style="color: #98be65;">(</span>parent curr<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">let</span> <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">(</span>u *r*<span style="color: #51afef;">)</span>
+          <span style="color: #51afef;">(</span>prev nil<span style="color: #51afef;">)</span>
+          <span style="color: #51afef;">(</span>next nil<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+      <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">loop</span> while u
+          do <span style="color: #51afef;">(</span>setf next <span style="color: #c678dd;">(</span>get-next u prev<span style="color: #c678dd;">)</span>
+                   prev u
+                   u next<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+The same facts that can be computed with recursive algorithms can also be
+computed in this way, without recursion. For example, to compute the size of the
+tree we keep a counter, <code>n</code>, and increment <code>n</code> whenever visiting a node for the
+first time.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">size2</span> <span style="color: #c678dd;">()</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">let</span> <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>u *r*<span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>prev nil<span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>next nil<span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>n <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">flet</span> <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">(</span>get-next <span style="color: #c678dd;">(</span>curr prev<span style="color: #c678dd;">)</span>
+             <span style="color: #c678dd;">(</span><span style="color: #51afef;">cond</span> <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>eql prev <span style="color: #51afef;">(</span>parent curr<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+                    <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">progn</span> <span style="color: #51afef;">(</span>incf n<span style="color: #51afef;">)</span>
+                           <span style="color: #51afef;">(</span><span style="color: #51afef;">cond</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>left curr<span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span>left curr<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+                                 <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>right curr<span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span>right curr<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+                                 <span style="color: #c678dd;">(</span>t <span style="color: #98be65;">(</span>parent curr<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+                   <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>eql prev <span style="color: #51afef;">(</span>left curr<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+                    <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">if</span> <span style="color: #51afef;">(</span>right curr<span style="color: #51afef;">)</span>
+                        <span style="color: #51afef;">(</span>right curr<span style="color: #51afef;">)</span>
+                        <span style="color: #51afef;">(</span>parent curr<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+                   <span style="color: #98be65;">(</span>t <span style="color: #a9a1e1;">(</span>parent curr<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+      <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">loop</span> while u
+            do <span style="color: #51afef;">(</span>setf next <span style="color: #c678dd;">(</span>get-next u prev<span style="color: #c678dd;">)</span>
+                     prev u
+                     u next<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    n<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+In some implementations of binary trees, the <code>parent</code> field is not used. When
+this is the case, a non-recursive implementation is still possible, but the
+implementation has to used a list (or stack) to keep track of the path from the
+current node to the root.
+</p>
+
+<p>
+A special kind of traversal that does not fit the pattern of the above functions
+is the breath-first traversal. In a breadth-first traversal, the nodes are
+visited level-by-level starting at the root and moving down, visiting the nodes
+at each level from left to right. This is similar to the way that we would read
+a page of English text. Breath-first traversal is implemented using a queue <code>q</code>
+that initially only contains the root, <code>r</code>. At each step, we extract the next
+node <code>u</code> from <code>q</code>, process <code>u</code> and add <code>(left u)</code> and <code>(right u)</code> (if they
+aren&rsquo;t empty) to <code>q</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">bf-traverse</span> <span style="color: #c678dd;">()</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">let</span> <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>q <span style="color: #51afef;">(</span>list *r*<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>u nil<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">loop</span> while q
+          do <span style="color: #a9a1e1;">(</span>setf u <span style="color: #51afef;">(</span>pop q<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+          do <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">if</span> <span style="color: #51afef;">(</span>left u<span style="color: #51afef;">)</span> <span style="color: #51afef;">(</span>setf q <span style="color: #c678dd;">(</span>append q <span style="color: #98be65;">(</span>list <span style="color: #a9a1e1;">(</span>left u<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+          do <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">if</span> <span style="color: #51afef;">(</span>right u<span style="color: #51afef;">)</span> <span style="color: #51afef;">(</span>setf q <span style="color: #c678dd;">(</span>append q <span style="color: #98be65;">(</span>list <span style="color: #a9a1e1;">(</span>right u<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+          <span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+</div>
+</div>
+</div>
+<div id="outline-container-org761b9ba" class="outline-2">
+<h2 id="org761b9ba">An Unbalanced Binary Search Tree</h2>
+<div class="outline-text-2" id="text-org761b9ba">
+<p>
+A Binary Search Tree is a special kind of binary tree in which each node <code>u</code>
+also stores a data value, <code>(value u)</code>, from some total order. The data values in a
+binary search tree obey the binary search tree property: For a node <code>u</code>, every
+data value stored in the subree rooted at <code>(left u)</code> is less than <code>(value u)</code> and
+every data value stored in the subree rooted at <code>(right u)</code> is greater than <code>(value
+u)</code>.
+</p>
+</div>
+
+<div id="outline-container-org80df756" class="outline-3">
+<h3 id="org80df756">Searching</h3>
+<div class="outline-text-3" id="text-org80df756">
+<p>
+The binary search tree property is extremely useful because it allows us to
+quickly locate value, <code>value</code>, in a binary search tree. To do this we start
+searching for <code>value</code> at the root <code>r</code>. When examining a node <code>u</code>, there are three
+cases:
+</p>
+
+<ol class="org-ol">
+<li>If <code>(&lt; x (value u))</code>, then the search proceeds to <code>(left u)</code>.</li>
+<li>If <code>(&gt; x (value u))</code>, then the search proceeds to <code>(right u)</code>.</li>
+<li>If <code>(= x (value u))</code>, then we have found the node containing <code>x</code>.</li>
+</ol>
+
+<p>
+The search terminates when Case 3 occurs or when <code>(not u)</code>. In the former case,
+we found <code>x</code>. In the latter case, we conclude that <code>x</code> is not in the binary
+search tree.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">find-eq</span> <span style="color: #c678dd;">(</span>x<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">let</span> <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>u *r*<span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>comp nil<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">loop</span> while <span style="color: #a9a1e1;">(</span>and u <span style="color: #51afef;">(</span>not <span style="color: #c678dd;">(</span>eql comp <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+          do <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">if</span> u <span style="color: #51afef;">(</span>setf comp <span style="color: #c678dd;">(</span>- x <span style="color: #98be65;">(</span>value u<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+          do <span style="color: #a9a1e1;">(</span>setf u <span style="color: #51afef;">(</span><span style="color: #51afef;">cond</span> <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>&lt; comp <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span>left u<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+                           <span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>&gt; comp <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span>right u<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+                           <span style="color: #c678dd;">(</span>t u<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span>value u<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+Two examples of searches in a binary search tree are shown. As the second
+example shows, even if we don&rsquo;t find <code>x</code> in the tree, we still gain some
+valuable information. If we look at the last node <code>u</code> at which Case 1 occured,
+we see that <code>(value u)</code> is the smallest value in the tree that is greater than
+<code>x</code>. Similarly, the last node at which Case 2 occured contains the largest value
+in the tree that is less than <code>x</code>. Therefore, by keeping track of the last node
+<code>z</code> at which Case 1 occurs, a Binary Search Tree can implement the <code>(find x)</code>
+operation that returns the smallest value stored in the tree that is greater
+than or equal to <code>x</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">find-geq</span> <span style="color: #c678dd;">(</span>x<span style="color: #c678dd;">)</span>
+  <span style="color: #83898d;">"Find X or the smallest value greater than X in the binary tree rooted at *R*"</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">let</span> <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>w *r*<span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>z nil<span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>comp nil<span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>found nil<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">loop</span> while <span style="color: #a9a1e1;">(</span>and w <span style="color: #51afef;">(</span>not <span style="color: #c678dd;">(</span>eql comp <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+          do <span style="color: #a9a1e1;">(</span>setf comp <span style="color: #51afef;">(</span>- x <span style="color: #c678dd;">(</span>value w<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+          do <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">cond</span> <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>&lt; comp <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #c678dd;">)</span> <span style="color: #c678dd;">(</span>setf z w
+                                     w <span style="color: #98be65;">(</span>left w<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+                   <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>&gt; comp <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #c678dd;">)</span> <span style="color: #c678dd;">(</span>setf w <span style="color: #98be65;">(</span>right w<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+                   <span style="color: #51afef;">(</span>t <span style="color: #c678dd;">(</span>setf found t<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">if</span> found <span style="color: #a9a1e1;">(</span>value w<span style="color: #a9a1e1;">)</span> <span style="color: #a9a1e1;">(</span>value z<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-orgcd7f7b7" class="outline-3">
+<h3 id="orgcd7f7b7">Addition</h3>
+<div class="outline-text-3" id="text-orgcd7f7b7">
+<p>
+To add a new value <code>x</code> to a Binary Search Tree, we first search for <code>x</code>. If we
+find it, then there is no need to insert it. Otherwise, we store <code>x</code> at a leaf
+child of the last node <code>p</code> encountered during the search for <code>x</code>. Whether the
+new node is the left or right child of <code>p</code> depends on the result of comparing
+<code>x</code> and <code>(value p)</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">find-last</span> <span style="color: #c678dd;">(</span>x<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">let</span> <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>w *r*<span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>prev nil<span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>comp nil<span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>found nil<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">loop</span> while <span style="color: #a9a1e1;">(</span>and w <span style="color: #51afef;">(</span>not <span style="color: #c678dd;">(</span>eql comp <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+          do <span style="color: #a9a1e1;">(</span>setf comp <span style="color: #51afef;">(</span>- x <span style="color: #c678dd;">(</span>value w<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+                   prev w<span style="color: #a9a1e1;">)</span>
+          do <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">cond</span> <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>&lt; comp <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #c678dd;">)</span> <span style="color: #c678dd;">(</span>setf w <span style="color: #98be65;">(</span>left w<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+                   <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>&gt; comp <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #c678dd;">)</span> <span style="color: #c678dd;">(</span>setf w <span style="color: #98be65;">(</span>right w<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+                   <span style="color: #51afef;">(</span>t <span style="color: #c678dd;">(</span>setf found t<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">if</span> found w prev<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">add-child</span> <span style="color: #c678dd;">(</span>p u<span style="color: #c678dd;">)</span>
+  <span style="color: #83898d;">"Add U as a child of P"</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">if</span> <span style="color: #98be65;">(</span>not p<span style="color: #98be65;">)</span>
+      <span style="color: #5B6268;">; inserting into empty tree</span>
+      <span style="color: #98be65;">(</span>setf *r* u<span style="color: #98be65;">)</span>
+      <span style="color: #98be65;">(</span><span style="color: #51afef;">let</span> <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">(</span>comp <span style="color: #c678dd;">(</span>- <span style="color: #98be65;">(</span>value u<span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span>value p<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+            <span style="color: #51afef;">(</span>found nil<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">cond</span> <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>&lt; comp <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #c678dd;">)</span> <span style="color: #c678dd;">(</span>setf <span style="color: #98be65;">(</span>left p<span style="color: #98be65;">)</span> u<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+              <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>&gt; comp <span style="color: #da8548; font-weight: bold;">0</span><span style="color: #c678dd;">)</span> <span style="color: #c678dd;">(</span>setf <span style="color: #98be65;">(</span>right p<span style="color: #98be65;">)</span> u<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+              <span style="color: #5B6268;">; U is already in the tree</span>
+              <span style="color: #51afef;">(</span>t <span style="color: #c678dd;">(</span>setf found t<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">if</span> <span style="color: #51afef;">(</span>not found<span style="color: #51afef;">)</span> <span style="color: #51afef;">(</span>setf <span style="color: #c678dd;">(</span>parent u<span style="color: #c678dd;">)</span> p<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>not found<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">add</span> <span style="color: #c678dd;">(</span>x<span style="color: #c678dd;">)</span>
+  <span style="color: #83898d;">"Add a new node to *R* with value of X if not already in *R*"</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">let</span> <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>p <span style="color: #51afef;">(</span>find-last x<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>nx <span style="color: #51afef;">(</span>make-instance 'binary-tree-node <span style="color: #c678dd;">:value</span> x<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span>add-child p nx<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+The most time-consuming part of this process is the initial search for <code>x</code>,
+which takes an amount of time proportional to the height of the newly added node
+<code>u</code>. In the worst case, this is equal to the height of the binary search tree.
+</p>
+</div>
+</div>
+<div id="outline-container-org08ce773" class="outline-3">
+<h3 id="org08ce773">Removal</h3>
+<div class="outline-text-3" id="text-org08ce773">
+<p>
+Deleting a value stored in a node <code>u</code> of a binary search tree is a little more
+difficult. If <code>u</code> is a leaf, then we can just detach <code>u</code> from its parent. Even
+better: if <code>u</code> has only one child, then we can splice <code>u</code> from the tree by
+having <code>(parent u)</code> adopt <code>u</code>&rsquo;s child.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">splice</span> <span style="color: #c678dd;">(</span>u<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">let</span> <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>s nil<span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>p nil<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span>setf s <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">if</span> <span style="color: #51afef;">(</span>left u<span style="color: #51afef;">)</span> <span style="color: #51afef;">(</span>left u<span style="color: #51afef;">)</span> <span style="color: #51afef;">(</span>right u<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">if</span> <span style="color: #a9a1e1;">(</span>eql u *r*<span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>setf *r* s<span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">progn</span>
+          <span style="color: #51afef;">(</span>setf p <span style="color: #c678dd;">(</span>parent u<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+          <span style="color: #51afef;">(</span><span style="color: #51afef;">if</span> <span style="color: #c678dd;">(</span>eql <span style="color: #98be65;">(</span>left p<span style="color: #98be65;">)</span> u<span style="color: #c678dd;">)</span>
+              <span style="color: #c678dd;">(</span>setf <span style="color: #98be65;">(</span>left p<span style="color: #98be65;">)</span> s<span style="color: #c678dd;">)</span>
+              <span style="color: #c678dd;">(</span>setf <span style="color: #98be65;">(</span>right p<span style="color: #98be65;">)</span> s<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">if</span> s <span style="color: #a9a1e1;">(</span>setf <span style="color: #51afef;">(</span>parent s<span style="color: #51afef;">)</span> p<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<p>
+Things get tricky, though, when <code>u</code> has two children. In this case, the simplest
+thing to do is to find a node <code>w</code> that has less than two children and such that
+<code>(value w)</code> can replace <code>(value u)</code>. To maintain the binary search tree
+property, <code>(value w)</code> should be close to the value of <code>(value u)</code>. For example,
+choosing <code>w</code> such that <code>(value w)</code> is the smallest value greater than <code>(value
+u)</code> will work. Finding the node <code>w</code> is easy; it is the smallest value in the
+subtree rooted at <code>(right u)</code>. This node can be easily removed because it has no
+left child.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">remove-node</span> <span style="color: #c678dd;">(</span>u<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">if</span> <span style="color: #98be65;">(</span>or <span style="color: #a9a1e1;">(</span>not <span style="color: #51afef;">(</span>left u<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span> <span style="color: #a9a1e1;">(</span>not <span style="color: #51afef;">(</span>right u<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+      <span style="color: #98be65;">(</span>splice u<span style="color: #98be65;">)</span>
+      <span style="color: #98be65;">(</span><span style="color: #51afef;">let</span> <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">(</span>w <span style="color: #c678dd;">(</span>right u<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+        <span style="color: #5B6268;">; get the smallest value in the subtree to the right of u</span>
+        <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">loop</span> while <span style="color: #51afef;">(</span>left w<span style="color: #51afef;">)</span> do <span style="color: #51afef;">(</span>setf w <span style="color: #c678dd;">(</span>left w<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>setf <span style="color: #51afef;">(</span>value u<span style="color: #51afef;">)</span> <span style="color: #51afef;">(</span>value w<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+        <span style="color: #a9a1e1;">(</span>splice w<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgec8d2a1" class="outline-3">
+<h3 id="orgec8d2a1">Summary</h3>
+<div class="outline-text-3" id="text-orgec8d2a1">
+<p>
+The <code>(find-geq x)</code>, <code>(add x)</code>, and <code>(remove-node x)</code> operations in a binary
+search tree each involved following a path from the root of the tree to some
+node in the tree. Without knowing more about the shape of the tree it is
+difficult to say much about the length of this path, except that it is less than
+<code>n</code>, the number of nodes in the tree. The followning (unimpressive) theorem
+summarizes the performance of the binary search tree data structure:
+</p>
+
+<pre class="example" id="orgd06d1e9">
+Binary search tree implements the SSet interface and supports the operations
+add, remove, and find in O(n) time per operation.
+</pre>
+
+<p>
+Theorem ## compares poorly with theorem ## which shows that the <code>SkiplistSSet</code>
+structure can implement the <code>SSet</code> interface with O(log n) expected time per
+operation. The problem iwht the binary search tree structure is that it can
+become unbalanced. Instead of looking like the tree in Figure ## it can look
+like a long chain of nodes, all but the last having exactly one child.
+</p>
+
+<p>
+There are a number of ways of avoiding unbalanced binary search trees, all of
+which lead to data structures that have O(log n) time operations. In Chapter 7
+we show how O(log n) expected time operations can be achieved with
+randomization. In Chapter 8 we show how O(log n) amortized time operations can
+be achieved with partial rebuilding operations. In Chapter 9 we show how
+O(log n) worst-case time operations can be achieved by simulating a tree that is
+not binary: one in which nodes can have up to four children.
+</p>
+</div>
+</div>
+
+<div id="outline-container-orgf520856" class="outline-3">
+<h3 id="orgf520856">Testing</h3>
+<div class="outline-text-3" id="text-orgf520856">
+<p>
+I&rsquo;ve added this section to document tests of the code I&rsquo;ve translated from the book.
+</p>
+</div>
+<div id="outline-container-org74b1a58" class="outline-4">
+<h4 id="org74b1a58">Setup</h4>
+<div class="outline-text-4" id="text-org74b1a58">
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">test-setup</span> <span style="color: #c678dd;">()</span>
+  <span style="color: #83898d;">"Helper function to rebuild the tree on demand"</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">*r*</span>   <span style="color: #98be65;">(</span>make-instance 'binary-tree-node <span style="color: #c678dd;">:value</span> <span style="color: #da8548; font-weight: bold;">7</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">*n3*</span>  <span style="color: #98be65;">(</span>make-instance 'binary-tree-node <span style="color: #c678dd;">:value</span> <span style="color: #da8548; font-weight: bold;">3</span>  <span style="color: #c678dd;">:parent</span> *r*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">*n11*</span> <span style="color: #98be65;">(</span>make-instance 'binary-tree-node <span style="color: #c678dd;">:value</span> <span style="color: #da8548; font-weight: bold;">11</span> <span style="color: #c678dd;">:parent</span> *r*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">*n1*</span>  <span style="color: #98be65;">(</span>make-instance 'binary-tree-node <span style="color: #c678dd;">:value</span> <span style="color: #da8548; font-weight: bold;">1</span>  <span style="color: #c678dd;">:parent</span> *n3*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">*n5*</span>  <span style="color: #98be65;">(</span>make-instance 'binary-tree-node <span style="color: #c678dd;">:value</span> <span style="color: #da8548; font-weight: bold;">5</span>  <span style="color: #c678dd;">:parent</span> *n3*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">*n9*</span>  <span style="color: #98be65;">(</span>make-instance 'binary-tree-node <span style="color: #c678dd;">:value</span> <span style="color: #da8548; font-weight: bold;">9</span>  <span style="color: #c678dd;">:parent</span> *n11*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">*n13*</span> <span style="color: #98be65;">(</span>make-instance 'binary-tree-node <span style="color: #c678dd;">:value</span> <span style="color: #da8548; font-weight: bold;">13</span> <span style="color: #c678dd;">:parent</span> *n11*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">*n4*</span>  <span style="color: #98be65;">(</span>make-instance 'binary-tree-node <span style="color: #c678dd;">:value</span> <span style="color: #da8548; font-weight: bold;">4</span>  <span style="color: #c678dd;">:parent</span> *n5*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">*n6*</span>  <span style="color: #98be65;">(</span>make-instance 'binary-tree-node <span style="color: #c678dd;">:value</span> <span style="color: #da8548; font-weight: bold;">6</span>  <span style="color: #c678dd;">:parent</span> *n5*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">*n8*</span>  <span style="color: #98be65;">(</span>make-instance 'binary-tree-node <span style="color: #c678dd;">:value</span> <span style="color: #da8548; font-weight: bold;">8</span>  <span style="color: #c678dd;">:parent</span> *n9*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">*n12*</span> <span style="color: #98be65;">(</span>make-instance 'binary-tree-node <span style="color: #c678dd;">:value</span> <span style="color: #da8548; font-weight: bold;">12</span> <span style="color: #c678dd;">:parent</span> *n13*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">defparameter</span> <span style="color: #dcaeea;">*n14*</span> <span style="color: #98be65;">(</span>make-instance 'binary-tree-node <span style="color: #c678dd;">:value</span> <span style="color: #da8548; font-weight: bold;">14</span> <span style="color: #c678dd;">:parent</span> *n13*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">with-slots</span> <span style="color: #98be65;">(</span>left right<span style="color: #98be65;">)</span> *r*
+    <span style="color: #98be65;">(</span>setf left *n3*<span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span>setf right *n11*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">with-slots</span> <span style="color: #98be65;">(</span>left right<span style="color: #98be65;">)</span> *n3*
+    <span style="color: #98be65;">(</span>setf left *n1*<span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span>setf right *n5*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">with-slots</span> <span style="color: #98be65;">(</span>left right<span style="color: #98be65;">)</span> *n11*
+    <span style="color: #98be65;">(</span>setf left *n9*<span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span>setf right *n13*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">with-slots</span> <span style="color: #98be65;">(</span>left right<span style="color: #98be65;">)</span> *n5*
+    <span style="color: #98be65;">(</span>setf left *n4*<span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span>setf right *n6*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+
+  <span style="color: #c678dd;">(</span>setf <span style="color: #98be65;">(</span>left *n9*<span style="color: #98be65;">)</span> *n8*<span style="color: #c678dd;">)</span>
+
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">with-slots</span> <span style="color: #98be65;">(</span>left right<span style="color: #98be65;">)</span> *n13*
+    <span style="color: #98be65;">(</span>setf left *n12*<span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span>setf right *n14*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+TEST-SETUP
+</pre>
+</div>
+</div>
+<div id="outline-container-org9396231" class="outline-4">
+<h4 id="org9396231">Test <code>size</code></h4>
+<div class="outline-text-4" id="text-org9396231">
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span>test-setup<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>eql <span style="color: #da8548; font-weight: bold;">12</span> <span style="color: #c678dd;">(</span>size *r*<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+T
+</pre>
+</div>
+</div>
+<div id="outline-container-orgcd6f9a1" class="outline-4">
+<h4 id="orgcd6f9a1">Test <code>height</code></h4>
+<div class="outline-text-4" id="text-orgcd6f9a1">
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span>test-setup<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>eql <span style="color: #da8548; font-weight: bold;">4</span> <span style="color: #c678dd;">(</span>height *r*<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+T
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orga22207a" class="outline-4">
+<h4 id="orga22207a">Test <code>size2</code></h4>
+<div class="outline-text-4" id="text-orga22207a">
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span>test-setup<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>eql <span style="color: #da8548; font-weight: bold;">12</span> <span style="color: #c678dd;">(</span>size2<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+T
+</pre>
+</div>
+</div>
+<div id="outline-container-orgd08a112" class="outline-4">
+<h4 id="orgd08a112">Test <code>find-eq</code></h4>
+<div class="outline-text-4" id="text-orgd08a112">
+<p>
+6 is in the tree, so it should be found.
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span>find-eq <span style="color: #da8548; font-weight: bold;">6</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+6
+</pre>
+
+
+<p>
+10 is not in the tree, so nothing should be found
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span>find-eq <span style="color: #da8548; font-weight: bold;">10</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+NIL
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org1d4902b" class="outline-4">
+<h4 id="org1d4902b">Test <code>find-geq</code></h4>
+<div class="outline-text-4" id="text-org1d4902b">
+<p>
+Since 10 isn&rsquo;t in the tree, the next largest value (11) should be returned.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span>find-geq <span style="color: #da8548; font-weight: bold;">10</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+11
+</pre>
+</div>
+</div>
+<div id="outline-container-orgf3325e1" class="outline-4">
+<h4 id="orgf3325e1">Test <code>find-last</code></h4>
+<div class="outline-text-4" id="text-orgf3325e1">
+<p>
+Since a node with value 6 is already in the tree, that node should be returned.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span>eql <span style="color: #c678dd;">(</span>find-last <span style="color: #da8548; font-weight: bold;">6</span><span style="color: #c678dd;">)</span> *n6*<span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+T
+</pre>
+
+
+<p>
+There is no node with value 10, <code>*n9*</code> would be the last node looked at before
+exhausting the search.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span>eql <span style="color: #c678dd;">(</span>find-last <span style="color: #da8548; font-weight: bold;">10</span><span style="color: #c678dd;">)</span> *n9*<span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+T
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org08f78ed" class="outline-4">
+<h4 id="org08f78ed">Test <code>add</code></h4>
+<div class="outline-text-4" id="text-org08f78ed">
+<p>
+10 isn&rsquo;t in the tree, and should be to the right of 9 when added
+</p>
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span>test-setup<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>add <span style="color: #da8548; font-weight: bold;">10</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>eql <span style="color: #c678dd;">(</span>value <span style="color: #98be65;">(</span>right *n9*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span> <span style="color: #da8548; font-weight: bold;">10</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+T
+</pre>
+</div>
+</div>
+<div id="outline-container-orgf8cbf9d" class="outline-4">
+<h4 id="orgf8cbf9d">Test <code>splice</code></h4>
+<div class="outline-text-4" id="text-orgf8cbf9d">
+<p>
+Splicing <code>*n4*</code> should make <code>(left *n5*)</code> nil.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span>splice *n4*<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>not <span style="color: #c678dd;">(</span>left *n5*<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+T
+</pre>
+</div>
+</div>
+<div id="outline-container-org860209b" class="outline-4">
+<h4 id="org860209b">Test <code>remove-node</code></h4>
+<div class="outline-text-4" id="text-org860209b">
+<p>
+Removing <code>*n11*</code> should update the value of <code>*n11*</code> to be 12 and remove the left child of <code>*n13*</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span>test-setup<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>remove-node *n11*<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>and <span style="color: #c678dd;">(</span>eql <span style="color: #98be65;">(</span>value *n11*<span style="color: #98be65;">)</span> <span style="color: #da8548; font-weight: bold;">12</span><span style="color: #c678dd;">)</span> <span style="color: #c678dd;">(</span>not <span style="color: #98be65;">(</span>left *n13*<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+T
+</pre>
+</div>
+</div>
+</div>
+</div>
+</div></div></body></html>

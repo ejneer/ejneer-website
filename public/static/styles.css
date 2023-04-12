@@ -1,0 +1,116 @@
+body {
+    margin: 40px auto;
+    font-family: "PT Sans", Helvetica, Arial, sans-serif;
+    font-size: 18px;
+    line-height: 1.5;
+}
+
+table {
+  width: 100%;
+}
+
+.src {
+    background: rgb(240,240,240);
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 5px 5px 5px lightgrey;
+    overflow-x: auto;
+}
+
+.content {
+    padding: 2em 3em 0;
+    margin-left: 25%;
+    max-width: 80ch;
+}
+
+.header {
+    margin: 80% 1em 0;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    background: rgb(240,240,240);
+    text-align: left;
+}
+
+@media only screen and (max-width: 768px) {
+    .sidebar {
+        display: none;
+    }
+
+    .content {
+        margin-left: 0;
+    }
+}
+
+.footer {
+    text-align: center;
+    font-size: 14px;
+}
+
+.figure p {
+    text-align: center;
+}
+
+.lead {
+    font-size: 1.25rem;
+}
+
+.sidebar-nav-item {
+    font-size: 20px;
+}
+
+table tbody {
+  margin-bottom: 20px;
+}
+
+.tag-link {
+    font-size:1rem;
+    color: gray
+}
+
+code {
+    color: gray;
+    font-style: italic;
+}
+
+/* source code highlighting */
+pre.src {
+    position: relative;
+    overflow: auto;
+    font-size: 14px;
+}
+
+pre.src:hover:before {
+    display: inline;
+    margin-top: 14px;
+}
+
+pre.src:before {
+    display: none;
+    position: absolute;
+    top: -8px;
+    right: 12px;
+    padding: 3px;
+    color: #555;
+    background-color: #f2f2f299;
+}
+
+
+pre.src-sqlite:before {
+    content: 'SQLite';
+}
+
+pre.src-lisp:before {
+    content: 'Lisp'
+}
+
+pre.src-python:before {
+    content: 'Python'
+}
+
+pre.src-R:before {
+    content: 'R'
+}
