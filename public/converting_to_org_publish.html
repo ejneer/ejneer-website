@@ -1,11 +1,11 @@
-<!DOCTYPE html><html lang="en"><head> <meta charset="utf-8" author="Eric Neer" name="viewport" content="width=device-width, initial-scale=1"></meta> <title>Converting To Org Publish - Eric Neer</title> <link href="/static/styles.css" rel="stylesheet"></link> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"></link> <link href="/static/favicon.png" rel="icon" type="image/x-icon"></link> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body> <div><div class="sidebar"> <div class="header"> <a href="/"> <img src="/static/pic.jpeg" width="150" style="border-radius: 50%;"></img></a> <p class="lead">Data Scientist & Engineer</p> <p class="lead">Mercury Insurance</p> <br></br><div class="sidebar-nav-item"> <i class="fa-solid fa-id-card"></i> <a href="/cv.html">CV</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-github"></i> <a href="https://github.com/ejneer">GitHub</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-linkedin"></i> <a href="https://www.linkedin.com/in/eric-neer/">LinkedIn</a></div><div class="footer"> <p>Made with <a href="https://www.gnu.org/software/emacs/">Emacs</a> 28.2 (<a href="https://orgmode.org">Org</a> mode 9.6)</p></div></div></div> <div class="content">
-<div id="outline-container-org59dfdd6" class="outline-2">
-<h2 id="org59dfdd6">Converting To Org Publish</h2>
-<div class="outline-text-2" id="text-org59dfdd6">
+<!DOCTYPE html><html lang="en"><head> <meta charset="utf-8" author="Eric Neer" name="viewport" content="width=device-width, initial-scale=1"></meta> <title>Converting To Org Publish - Eric Neer</title> <link href="/static/styles.css" rel="stylesheet"></link> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"></link> <link href="/static/favicon.png" rel="icon" type="image/x-icon"></link> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body> <div><div class="sidebar"> <div class="header"> <a href="/"> <img src="/static/pic.jpeg" width="150" style="border-radius: 50%;"></img></a> <p class="lead">Data Scientist & Engineer</p> <p class="lead">Mercury Insurance</p> <br></br><div class="sidebar-nav-item"> <i class="fa-solid fa-id-card"></i> <a href="/cv.html">CV</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-github"></i> <a href="https://github.com/ejneer">GitHub</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-linkedin"></i> <a href="https://www.linkedin.com/in/eric-neer/">LinkedIn</a></div><div class="footer"> <p>Made with <a href="https://www.gnu.org/software/emacs/">Emacs</a> 28.2 (<a href="https://orgmode.org">Org</a> mode 9.6.1)</p></div></div></div> <div class="content">
+<div id="outline-container-org30cdae7" class="outline-2">
+<h2 id="org30cdae7">Converting To Org Publish</h2>
+<div class="outline-text-2" id="text-org30cdae7">
 </div>
-<div id="outline-container-orgb0dc6e1" class="outline-3">
-<h3 id="orgb0dc6e1">Motivation</h3>
-<div class="outline-text-3" id="text-orgb0dc6e1">
+<div id="outline-container-org5f539a8" class="outline-3">
+<h3 id="org5f539a8">Motivation</h3>
+<div class="outline-text-3" id="text-org5f539a8">
 <p>
 I originally set up my personal website in early 2020 using <a href="https://pkgs.rstudio.com/blogdown/">blogdown</a> since most
 of my work at the time was done with R or python, both well supported by
@@ -14,12 +14,20 @@ generator <a href="https://gohugo.io">hugo</a> to quickly make a nice looking si
 of configuration magic and hidden details, but after setting everything up once
 things just seemed to work.
 </p>
+
+<p>
+For various reasons I didn&rsquo;t write or change much about the site for a couple
+years. When I finally wanted to update the site I ran in to various errors from
+using an old Hugo version and there was a lot of configuration I just forgot
+about. I had been interested in using only emacs/org mode and thought this was a
+good time to finally go for it.
+</p>
 </div>
 </div>
 
-<div id="outline-container-org55681dc" class="outline-3">
-<h3 id="org55681dc">Publish Configuration</h3>
-<div class="outline-text-3" id="text-org55681dc">
+<div id="outline-container-org2cc12f6" class="outline-3">
+<h3 id="org2cc12f6">Setup for Makefile</h3>
+<div class="outline-text-3" id="text-org2cc12f6">
 <div class="org-src-container">
 <pre class="src src-elisp"><span style="color: #5B6268;">;; </span><span style="color: #5B6268;">below taken from systemcrafters</span>
 <span style="color: #5B6268;">;; </span><span style="color: #5B6268;">https://systemcrafters.net/publishing-websites-with-org-mode/building-the-site/</span>
@@ -48,16 +56,22 @@ things just seemed to work.
 <span style="color: #51afef;">(</span><span style="color: #a9a1e1;">require</span> <span style="color: #51afef;">'</span><span style="color: #a9a1e1;">ox-publish</span><span style="color: #51afef;">)</span>
 <span style="color: #51afef;">(</span><span style="color: #a9a1e1;">require</span> <span style="color: #51afef;">'</span><span style="color: #a9a1e1;">shr</span><span style="color: #51afef;">)</span>
 
-<span style="color: #51afef;">(</span><span style="color: #51afef;">setq</span> content-dir <span style="color: #c678dd;">(</span><span style="color: #a9a1e1;">expand-file-name</span> <span style="color: #98be65;">"content/"</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/publish</span> <span style="color: #c678dd;">()</span>
+  <span style="color: #83898d;">"Helper to ignore publish cache"</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">interactive</span><span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span><span style="color: #c678dd;">org-publish-all</span> t<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
 </pre>
 </div>
+</div>
+</div>
 
-<p>
-Some text here
-</p>
-
+<div id="outline-container-org2d04bab" class="outline-3">
+<h3 id="org2d04bab">Org Publish Configuration</h3>
+<div class="outline-text-3" id="text-org2d04bab">
 <div class="org-src-container">
-<pre class="src src-elisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">setq</span> <span style="color: #dcaeea;">org-publish-project-alist</span>
+<pre class="src src-elisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">setq</span> content-dir <span style="color: #c678dd;">(</span><span style="color: #a9a1e1;">expand-file-name</span> <span style="color: #98be65;">"content/"</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">setq</span> <span style="color: #dcaeea;">org-publish-project-alist</span>
       <span style="color: #c678dd;">(</span><span style="color: #a9a1e1;">list</span>
        <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">list</span> <span style="color: #98be65;">"ejneer:main"</span>
              <span style="color: #c678dd;">:recursive</span> t
@@ -91,8 +105,26 @@ Some text here
                                       <span style="color: #98be65;">"html"</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
                       plist
                       pub-dir<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+</div>
+</div>
 
-<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/org-html-template</span> <span style="color: #c678dd;">(</span>contents info<span style="color: #c678dd;">)</span>
+<div id="outline-container-org547b5db" class="outline-3">
+<h3 id="org547b5db">HTML Template</h3>
+<div class="outline-text-3" id="text-org547b5db">
+<p>
+I stumbled across the <code>shr.el</code> library that ships with emacs and use it to do
+all of the html generation for the site. I liked that it is essentially just
+writing raw html because function names correspond to html tags, but with the
+added ability to encapsulate elements in regular elisp functions and lists. This
+helped me in that I could approach the site in a piecewise manner and compose
+bits of it together. This also avoids having to learn any js frameworks which I
+have no interest in doing.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-elisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/org-html-template</span> <span style="color: #c678dd;">(</span>contents info<span style="color: #c678dd;">)</span>
   <span style="color: #c678dd;">(</span><span style="color: #a9a1e1;">concat</span>
    <span style="color: #98be65;">"&lt;!DOCTYPE html&gt;"</span>
    <span style="color: #98be65;">(</span><span style="color: #c678dd;">shr-dom-to-xml</span>
@@ -155,12 +187,24 @@ Some text here
   <span style="color: #c678dd;">(</span><span style="color: #c678dd;">shr-dom-to-xml</span>
    <span style="color: #51afef;">`</span><span style="color: #98be65;">(</span>div <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">(</span>class . <span style="color: #98be65;">"footer"</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
      <span style="color: #a9a1e1;">(</span>p <span style="color: #51afef;">()</span> <span style="color: #98be65;">"Made with "</span> ,<span style="color: #51afef;">(</span><span style="color: #a9a1e1;">plist-get</span> info <span style="color: #c678dd;">:creator</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+</div>
+</div>
 
-<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/publish</span> <span style="color: #c678dd;">()</span>
-  <span style="color: #c678dd;">(</span><span style="color: #51afef;">interactive</span><span style="color: #c678dd;">)</span>
-  <span style="color: #c678dd;">(</span><span style="color: #c678dd;">org-publish-all</span> t<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+<div id="outline-container-org220e5e0" class="outline-3">
+<h3 id="org220e5e0">Helpers</h3>
+<div class="outline-text-3" id="text-org220e5e0">
+<p>
+I wanted to adopt the notion of a document type so I could treat the various org
+files differently as far as rendering them. The motivating need was that I
+wanted a list of blog posts on the main page, but not all org files are blog
+posts (or they are in-work blog posts) so they can&rsquo;t just all be listed. This is
+implemented with a custom property <code>doctype</code>.
+</p>
 
-<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/find-main-proj</span> <span style="color: #c678dd;">(</span>proj-name<span style="color: #c678dd;">)</span>
+<div class="org-src-container">
+<pre class="src src-elisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">ejneer/find-main-proj</span> <span style="color: #c678dd;">(</span>proj-name<span style="color: #c678dd;">)</span>
   <span style="color: #c678dd;">(</span><span style="color: #c678dd;">cl-find-if</span> <span style="color: #98be65;">(</span><span style="color: #51afef;">lambda</span> <span style="color: #a9a1e1;">(</span>x<span style="color: #a9a1e1;">)</span> <span style="color: #a9a1e1;">(</span><span style="color: #a9a1e1;">string=</span> <span style="color: #51afef;">(</span><span style="color: #a9a1e1;">car</span> x<span style="color: #51afef;">)</span> proj-name<span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span> <span style="color: #dcaeea;">org-publish-project-alist</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
 
 <span style="color: #51afef;">(</span><span style="color: #51afef;">setq</span> ejneer/proj-name <span style="color: #98be65;">"ejneer:main"</span><span style="color: #51afef;">)</span>
