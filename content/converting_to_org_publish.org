@@ -1,4 +1,28 @@
-;; [[file:content/converting_to_org_publish.org::*Setup for Makefile][Setup for Makefile:1]]
+#+title: Converting To Org Publish
+#+date: 2023-04-04
+#+property: header-args:elisp :exports code :tangle ../publish.el :comments link
+#+property: doctype post
+
+* Converting To Org Publish
+
+** Motivation
+
+I originally set up my personal website in early 2020 using [[https://pkgs.rstudio.com/blogdown/][blogdown]] since most
+of my work at the time was done with R or python, both well supported by
+Rmarkdown and its ecosystem. This was used in conjunction with the static site
+generator [[https://gohugo.io][hugo]] to quickly make a nice looking site. It felt like there was a lot
+of configuration magic and hidden details, but after setting everything up once
+things just seemed to work.
+
+For various reasons I didn't write or change much about the site for a couple
+years. When I finally wanted to update the site I ran in to various errors from
+using an old Hugo version and there was a lot of configuration I just forgot
+about. I had been interested in using only emacs/org mode and thought this was a
+good time to finally go for it.
+
+** Setup for Makefile
+
+#+begin_src elisp
 ;; below taken from systemcrafters
 ;; https://systemcrafters.net/publishing-websites-with-org-mode/building-the-site/
 ;; Set the package installation directory so that packages aren't stored in the
@@ -30,9 +54,11 @@
   "Helper to ignore publish cache"
   (interactive)
   (org-publish-all t))
-;; Setup for Makefile:1 ends here
+#+end_src
 
-;; [[file:content/converting_to_org_publish.org::*Org Publish Configuration][Org Publish Configuration:1]]
+** Org Publish Configuration
+
+#+begin_src elisp
 (setq content-dir (expand-file-name "content/"))
 
 (setq org-publish-project-alist
@@ -69,9 +95,19 @@
                                       "html"))
                       plist
                       pub-dir))
-;; Org Publish Configuration:1 ends here
+#+end_src
 
-;; [[file:content/converting_to_org_publish.org::*HTML Template][HTML Template:1]]
+** HTML Template
+
+I stumbled across the ~shr.el~ library that ships with emacs and use it to do
+all of the html generation for the site. I liked that it is essentially just
+writing raw html because function names correspond to html tags, but with the
+added ability to encapsulate elements in regular elisp functions and lists. This
+helped me in that I could approach the site in a piecewise manner and compose
+bits of it together. This also avoids having to learn any js frameworks which I
+have no interest in doing.
+
+#+begin_src elisp
 (defun ejneer/org-html-template (contents info)
   (concat
    "<!DOCTYPE html>"
@@ -135,9 +171,17 @@
   (shr-dom-to-xml
    `(div ((class . "footer"))
      (p () "Made with " ,(plist-get info :creator)))))
-;; HTML Template:1 ends here
+#+end_src
 
-;; [[file:content/converting_to_org_publish.org::*Helpers][Helpers:1]]
+** Helpers
+
+I wanted to adopt the notion of a document type so I could treat the various org
+files differently as far as rendering them. The motivating need was that I
+wanted a list of blog posts on the main page, but not all org files are blog
+posts (or they are in-work blog posts) so they can't just all be listed. This is
+implemented with a custom property ~doctype~.
+
+#+begin_src elisp
 (defun ejneer/find-main-proj (proj-name)
   (cl-find-if (lambda (x) (string= (car x) proj-name)) org-publish-project-alist))
 
@@ -161,4 +205,4 @@
   (with-temp-buffer
     (insert-file-contents file-path)
     (org-export-get-environment)))
-;; Helpers:1 ends here
+#+end_src

@@ -1,0 +1,67 @@
+#+title: Home
+
+* Eric Neer
+I'm a Data Scientist and Engineer interested in operations, statistics, and
+functional programming. I maintain this site as a way to document my learning
+and writing in public.
+
+** Posts
+
+  #+begin_src elisp :wrap export html :exports results
+(defun ejneer/link-to-file (file-path)
+  (s-replace-regexp "org$" "html" (string-replace content-dir "" file-path)))
+
+(defun ejneer/get-file-tags (file-path)
+  (let ((tags
+         (alist-get "TAGS" (ejneer/get-file-keywords file-path) nil nil #'string-equal)))
+    (if tags
+        (split-string tags " "))))
+
+
+(defun ejneer/tags-to-html (tags)
+  (cl-flet ((to-li (tag)
+                   (shr-dom-to-xml
+                    `(a ((href . "")
+                         (class . "tag-link"))
+                      ,tag))))
+    (shr-dom-to-xml
+     `(div ()
+       ,(mapconcat #'to-li tags " ")))))
+
+
+(defun ejneer/post-list-entry (file-path)
+  (let* ((export-env (ejneer/get-file-export-env file-path))
+         (title (car (plist-get export-env :title)))
+         (date (car (plist-get export-env :date))))
+    (shr-dom-to-xml
+     `(tbody ()
+       (tr ()
+           (td () ,date)
+           (td ()
+               (a ((href . ,(ejneer/link-to-file file-path)))
+                  ,title))
+           (td () ,(ejneer/tags-to-html (ejneer/get-file-tags file-path))))))))
+
+(defun ejneer/org-file-date (file-path)
+  "Get the date property of an org file."
+  (car (plist-get (ejneer/get-file-export-env file-path) :date)))
+
+(let* ((post-files (cl-remove-if-not #'ejneer/is-post-p ejneer/proj-files))
+       (post-files-ordered (-sort (lambda (x y)
+                                    (not (time-less-p
+                                          (org-time-string-to-time (ejneer/org-file-date x))
+                                          (org-time-string-to-time (ejneer/org-file-date y)))))
+                                  post-files))
+       (posts (mapconcat #'ejneer/post-list-entry post-files-ordered "\n")))
+  (shr-dom-to-xml
+   `(table ((class . "post-table"))
+     (colgroup ()
+               (col ((span . "1")
+                     (style . "width: 15%" )))
+               (col ((span . "1")
+                     (style . "width: 50%"))))
+     ,posts)))
+  #+end_src
+
+** Projects
+[[file:msthesis/index.org][Master's Thesis Research]]
