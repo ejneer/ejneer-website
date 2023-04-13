@@ -3,7 +3,7 @@
 #+date: 2020-06-05
 #+tags: python algorithms
 #+doctype: post
-#+property: header-args :exports both
+#+property: header-args :exports both :eval never-export
 #+property: header-args:R  :session *R-quicksort*
 
 #+begin_src R :exports none

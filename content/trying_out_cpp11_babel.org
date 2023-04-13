@@ -2,7 +2,7 @@
 #+date: 2022-11-06
 #+tags: org R C/C++
 #+property: header-args:R  :session *R-cpp11*
-#+property: header-args    :exports both
+#+property: header-args    :exports both :eval never-export
 #+doctype: post
 
 * Trying out CPP11 and org-babel
