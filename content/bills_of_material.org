@@ -2,7 +2,7 @@
 #+author: Eric Neer
 #+date: 2020-07-25
 #+tags: sql graphs manufacturing
-#+property: doctype post
+#+doctype: post
 #+property: header-args :exports both :eval never-export
 #+property: header-args:R  :session *R-bom*
 #+property: header-args:sqlite :db bom.db :colnames yes

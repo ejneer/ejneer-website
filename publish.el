@@ -155,7 +155,7 @@
                               (org-element-property :value keyword))))))
 
 (defun ejneer/is-post-p (file-path)
-  (member '("PROPERTY" . "doctype post") (ejneer/get-file-keywords file-path)))
+  (member '("DOCTYPE" . "post") (ejneer/get-file-keywords file-path)))
 
 (defun ejneer/get-file-export-env (file-path)
   (with-temp-buffer

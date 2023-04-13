@@ -2,7 +2,7 @@
 #+author: Eric Neer
 #+date: 2020-06-05
 #+tags: python algorithms
-#+property: doctype post
+#+doctype: post
 #+property: header-args :exports both
 #+property: header-args:R  :session *R-quicksort*
 

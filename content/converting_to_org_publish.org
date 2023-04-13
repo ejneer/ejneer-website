@@ -1,7 +1,7 @@
 #+title: Converting To Org Publish
 #+date: 2023-04-04
+#+doctype: post
 #+property: header-args:elisp :exports code :tangle ../publish.el :comments link
-#+property: doctype post
 
 * Converting To Org Publish
 
@@ -199,7 +199,7 @@ implemented with a custom property ~doctype~.
                               (org-element-property :value keyword))))))
 
 (defun ejneer/is-post-p (file-path)
-  (member '("PROPERTY" . "doctype post") (ejneer/get-file-keywords file-path)))
+  (member '("DOCTYPE" . "post") (ejneer/get-file-keywords file-path)))
 
 (defun ejneer/get-file-export-env (file-path)
   (with-temp-buffer

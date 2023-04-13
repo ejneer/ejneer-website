@@ -3,7 +3,7 @@
 #+tags: org R C/C++
 #+property: header-args:R  :session *R-cpp11*
 #+property: header-args    :exports both
-#+property: doctype post
+#+doctype: post
 
 * Trying out CPP11 and org-babel
 
