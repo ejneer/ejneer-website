@@ -1,0 +1,23 @@
+#+title: Master's Thesis
+
+* Master's Thesis
+My thesis research focused on prediction of the mechanical properties of carbon
+nanotube (CNT) reinforced composites. This was done by extending traditional
+models applied to typical composites (e.g. laminated plate theory).
+
+#+caption: Multi-wall carbon nanotubes in a polystyrene film.
+#+attr_html: :width 300px
+[[./featured.png]]
+
+** Publications
++ Stiffness Predictions of Carbon Nanotube Reinforced Two and Three-Phase
+  Polymer Composites
+  + [[file:pdfs/thesis.pdf][Thesis Paper]]
+  + [[https://www.proquest.com/docview/1732677857/BE37C102B9DB4853PQ/1][Proquest Text]]
++ Micromechanical Stiffness Predictions at the Nano-Scale: Carbon Nanotube
+  Reinforced Composites
+  + [[file:pdfs/6144388-neer-lb15-0069.pdf][Conference paper published in SAMPE 2016]]
+** Talks
++ Micromechanical Stiffness Predictions at the Nano-Scale: Carbon Nanotube
+  Reinforced Composites
+  + [[file:pdfs/SAMPE_Long_Beach_Neer_LB15-0069.pdf][Slides accompanying my publication for SAMPE 2016]]

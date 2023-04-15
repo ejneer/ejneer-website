@@ -1,0 +1,63 @@
+#+title: CV
+
+* Education
+
+#+begin_src elisp :wrap export html :exports results
+(defun education-table (institution degree date)
+  (shr-dom-to-xml
+   `(tbody ()
+     (tr ()
+         (td () ,date)
+         (td () (b () ,degree)))
+     (tr ()
+         (td () "")
+         (td () ,institution)))))
+
+;; (shr-dom-to-xml
+;;  `(ul ((class . "ul-edu"))
+;;    ,(mapconcat #'education-entry entries "\n")))
+
+(shr-dom-to-xml
+ `(table ()
+   ,(mapconcat (lambda (x) (apply #'education-table x))
+               '(("University of California, Irvine" "Data Science Certification" "2017")
+                 ("California State University, Long Beach" "MS Aerospace Engineering" "2015")
+                 ("California State Polytechnic University, Pomona" "BS Aerospace Engineering" "2012"))
+               "\n")))
+#+end_src
+
+* Select Experience
+
+#+begin_src elisp :wrap export html :exports results
+(defun employment-table (title employer start end location)
+  (shr-dom-to-xml
+   `(tbody ()
+     (tr ()
+         (td () ,end)
+         (td () ,start)
+         (td () (b () ,title))
+         (td () ,location))
+     (tr ()
+         (td () "")
+         (td () "")
+         (td () ,employer)
+         (td () "")))))
+
+(shr-dom-to-xml
+ `(table ()
+   ,(mapconcat (lambda (x) (apply #'employment-table x))
+               '(("Data Scientist" "Mercury Insurance" "June 2021" "Present" "Remote, CA")
+                 ("Data Scientist" "Stanley Black & Decker" "Nov 2019" "June 2021" "Brea, CA")
+                 ("Engineer, F-35 Program" "Northrop Grumman" "Feb 2016" "Aug 2019" "Redondo Beach, CA")
+                 ("Project Engineer" "Solvay (Cytec)" "Sep 2014" "Feb 2016" "Santa Fe Springs, CA"))
+               "\n")))
+#+end_src
+
+* Publications
++ MS Thesis, Stiffness Predictions of Carbon Nanotube Reinforced Two and
+  Three-phase Polymer Composites
++ SAMPE 2016 Conference Paper and Talk, Micromechanical Stiffness Predictions at
+  the Nano-Scale: Carbon Nanotube Reinforced Composites
+* Awards
++ Graduate Dean's List Award, College of Engineering (2015-2016), CSULB May 2016
++ Outstanding Thesis Award, Aerospace Engineering (2015-2016), CSULB May 2016
