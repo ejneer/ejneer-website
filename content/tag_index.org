@@ -1,4 +1,5 @@
 #+title: Tag_index
+#+options: toc:1
 
 #+begin_src elisp :exports results :results raw
 ;; re-generate the tag index file
@@ -21,8 +22,11 @@
 (let* ((taghash (all-file-tags))
        (keys (sort (hash-table-keys taghash)
                    (lambda (x y) (string< (downcase x) (downcase y))))))
-   (org-element-interpret-data
-    (cl-loop for key in keys
+  (org-element-interpret-data
+   (cl-loop for key in keys
             collect
-            (org-element-create 'headline `(:level 1 :title ,key)))))
+            (org-element-create 'headline `(:level 1 :title ,key)
+                                (org-element-create 'property-drawer nil
+                                                    ;; janky way to add a custom id for export??
+                                                    (concat ":CUSTOM_ID: " key "\n"))))))
 #+end_src
