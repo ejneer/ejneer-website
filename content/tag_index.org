@@ -1,5 +1,4 @@
-#+title: Tag_index
-#+options: toc:1
+#+title: Tag Index
 
 #+begin_src elisp :exports results :results raw
 ;; re-generate the tag index file
@@ -19,14 +18,24 @@
                            do (cl-pushnew file (gethash tag taghash)))))
     taghash))
 
+(defun ejneer/org-file-title (file-path)
+  "Get the title property of an org file."
+  (car (plist-get (ejneer/get-file-export-env file-path) :title)))
+
 (let* ((taghash (all-file-tags))
        (keys (sort (hash-table-keys taghash)
                    (lambda (x y) (string< (downcase x) (downcase y))))))
   (org-element-interpret-data
    (cl-loop for key in keys
             collect
-            (org-element-create 'headline `(:level 1 :title ,key)
-                                (org-element-create 'property-drawer nil
-                                                    ;; janky way to add a custom id for export??
-                                                    (concat ":CUSTOM_ID: " key "\n"))))))
+            (apply #'org-element-create
+                   'headline
+                   `(:level 1 :title ,key)
+                   (org-element-create 'property-drawer nil
+                                       ;; janky way to add a custom id for export??
+                                       (concat ":CUSTOM_ID: " key "\n"))
+                   (cl-loop for file in (gethash key taghash)
+                            collect (org-element-create 'item `(:bullet "+ " :structure nil)
+                                                        (org-element-create 'link `(:path ,file  :type "file")
+                                                                            (ejneer/org-file-title file))))))))
 #+end_src

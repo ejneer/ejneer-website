@@ -21,7 +21,7 @@ and writing in public.
 (defun ejneer/tags-to-html (tags)
   (cl-flet ((to-li (tag)
                    (shr-dom-to-xml
-                    `(a ((href . "")
+                    `(a ((href . ,(concat "/tag_index.html#" tag))
                          (class . "tag-link"))
                       ,tag))))
     (shr-dom-to-xml
