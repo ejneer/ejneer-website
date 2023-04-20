@@ -1,0 +1,28 @@
+#+title: Tag_index
+
+#+begin_src elisp :exports results :results raw
+;; re-generate the tag index file
+(defun file-tags (file)
+  "Get the #+TAGS from a given file"
+  (cdr (assoc "TAGS" (ejneer/get-file-keywords file))))
+
+(defun all-file-tags ()
+  "Collect the #+TAGS from all post files"
+  (let ((post-files ejneer/proj-files)
+        (taghash (make-hash-table :test 'equal)))
+    (cl-loop for file in post-files
+             if (and (ejneer/is-post-p file)
+                     (file-tags file))
+             do (let ((tags (split-string (file-tags file))))
+                  (cl-loop for tag in tags
+                           do (cl-pushnew file (gethash tag taghash)))))
+    taghash))
+
+(let* ((taghash (all-file-tags))
+       (keys (sort (hash-table-keys taghash)
+                   (lambda (x y) (string< (downcase x) (downcase y))))))
+   (org-element-interpret-data
+    (cl-loop for key in keys
+            collect
+            (org-element-create 'headline `(:level 1 :title ,key)))))
+#+end_src
