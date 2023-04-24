@@ -1,6 +1,6 @@
 #+title: Trying out cpp11 and org-babel
 #+date: 2022-11-06
-#+tags: org R C/C++
+#+tags: orgmode R C/C++
 #+property: header-args:R  :session *R-cpp11*
 #+property: header-args    :exports both :eval never-export
 #+doctype: post

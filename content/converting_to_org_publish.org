@@ -1,5 +1,6 @@
 #+title: Converting To Org Publish
 #+date: 2023-04-04
+#+tags: emacs orgmode
 #+doctype: post
 #+property: header-args:elisp :exports code :tangle ../publish.el :comments link
 
