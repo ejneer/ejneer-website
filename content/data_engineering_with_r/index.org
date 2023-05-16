@@ -1,0 +1,7 @@
+#+title: Data Engineering with R
+
+* Data Engineering with R
+
+I believe R is a powerful yet underrated tool for data engineering as it is
+thought of today, and want to demonstrate some patterns that demonstrate this
+and have been useful to me professionally.
