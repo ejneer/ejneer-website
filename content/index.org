@@ -5,6 +5,9 @@ I'm a Data Scientist and Engineer interested in operations, statistics, and
 functional programming. I maintain this site as a way to document my learning
 and writing in public.
 
+** Projects
+[[file:msthesis/index.org][Master's Thesis Research]]
+
 ** Posts
 
   #+begin_src elisp :wrap export html :exports results
@@ -63,5 +66,3 @@ and writing in public.
      ,posts)))
   #+end_src
 
-** Projects
-[[file:msthesis/index.org][Master's Thesis Research]]
