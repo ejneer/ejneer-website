@@ -1,0 +1,314 @@
+<!DOCTYPE html><html lang="en"><head> <meta charset="utf-8" author="Eric Neer" name="viewport" content="width=device-width, initial-scale=1"></meta> <title>Closure Networks in R - Eric Neer</title> <link href="/static/styles.css" rel="stylesheet"></link> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"></link> <link href="/static/favicon.png" rel="icon" type="image/x-icon"></link> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body> <div><div class="sidebar"> <div class="header"> <a href="/"> <img src="/static/pic.jpeg" width="150" style="border-radius: 50%;"></img></a> <p class="lead">Data Scientist & Engineer</p> <p class="lead">Mercury Insurance</p> <br></br><div class="sidebar-nav-item"> <i class="fa-solid fa-id-card"></i> <a href="/cv.html">CV</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-github"></i> <a href="https://github.com/ejneer">GitHub</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-linkedin"></i> <a href="https://www.linkedin.com/in/eric-neer/">LinkedIn</a></div><div class="footer"> <p>Made with <a href="https://www.gnu.org/software/emacs/">Emacs</a> 28.2 (<a href="https://orgmode.org">Org</a> mode 9.6.1)</p></div></div></div> <div class="content">
+
+<div id="outline-container-org6099400" class="outline-2">
+<h2 id="org6099400">Closure Networks in R</h2>
+<div class="outline-text-2" id="text-org6099400">
+<p>
+I&rsquo;ve been working through some topics in Paul Graham&rsquo;s &ldquo;On Lisp&rdquo; and recently
+read the chapter on Functions as Representation for the first time. He presents
+an example of using closures to define and traverse a network, a binary tree
+representation of a game of 21 question in this instance. I thought it would be
+a good exercise to help my understanding of the concept to try and reproduce his
+Common Lisp example using R, which has a lot in common with lisp flavors.
+</p>
+</div>
+
+<div id="outline-container-org000a5cc" class="outline-3">
+<h3 id="org000a5cc">Data model</h3>
+<div class="outline-text-3" id="text-org000a5cc">
+<p>
+Nodal information is stored in flat lists, with certain information going in
+specific positions:
+</p>
+
+<ol class="org-ol">
+<li>The node&rsquo;s ID</li>
+<li>The question to ask</li>
+<li>The next node ID should the answer be &ldquo;yes&rdquo;</li>
+<li>The next node ID should the answer be &ldquo;no&rdquo;</li>
+</ol>
+
+<p>
+For example, the following puts the <code>people</code> node on the list:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defvar</span> <span style="color: #dcaeea;">*nodes*</span> nil<span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">defnode</span> <span style="color: #c678dd;">(</span><span style="color: #ECBE7B;">&amp;rest</span> args<span style="color: #c678dd;">)</span>
+  <span style="color: #c678dd;">(</span>push args *nodes*<span style="color: #c678dd;">)</span>
+  args<span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span>defnode 'people <span style="color: #98be65;">"Is the person a man?"</span> 'male 'female<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>defnode 'male <span style="color: #98be65;">"Is he living?"</span> 'liveman 'deadman<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>defnode 'deadman <span style="color: #98be65;">"Was he American?"</span> 'us 'them<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>defnode 'us <span style="color: #98be65;">"Is he on a coin?"</span> 'coin 'cidence<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>defnode 'coin <span style="color: #98be65;">"Is the coin a penny?"</span> 'penny 'coins<span style="color: #51afef;">)</span>
+<span style="color: #51afef;">(</span>defnode 'penny 'lincoln<span style="color: #51afef;">)</span>
+
+<span style="color: #51afef;">(</span>assoc 'people *nodes*<span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+(PEOPLE "Is the person a man?" MALE FEMALE)
+</pre>
+
+
+<p>
+We can stick with this simple list of nodes since this is just a toy example.
+Note the use of the superassignment operator <code>&lt;&lt;-</code> in this fashion is generally
+frowned upon but again this is just to demonstrate concepts. Inputs are captures
+as symbols to make calling the R function look like calling the lisp function,
+though this isn&rsquo;t the most idiomatic R.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #a9a1e1;">library</span>(rlang)
+
+nodes <span style="color: #a9a1e1;">&lt;-</span> list()
+
+<span style="color: #c678dd;">defnode</span> <span style="color: #a9a1e1;">&lt;-</span> <span style="color: #51afef;">function</span>(...) {
+  nodes <span style="color: #a9a1e1;">&lt;&lt;-</span> append(nodes, list(ensyms(...)))
+}
+
+defnode(people, <span style="color: #98be65;">"Is the person a man?"</span>, male, female)
+defnode(male, <span style="color: #98be65;">"Is he living?"</span>, liveman, deadman)
+defnode(deadman, <span style="color: #98be65;">"Was he American?"</span>, us, them)
+defnode(us, <span style="color: #98be65;">"Is he on a coin?"</span>, coin, cidence)
+defnode(coin, <span style="color: #98be65;">"Is the coin a penny?"</span>, penny, coins)
+defnode(penny, lincoln)
+
+nodes[[<span style="color: #da8548; font-weight: bold;">1</span>]]
+</pre>
+</div>
+
+<pre class="example" id="orge654570">
+[[1]]
+people
+
+[[2]]
+`Is the person a man?`
+
+[[3]]
+male
+
+[[4]]
+female
+</pre>
+</div>
+</div>
+
+<div id="outline-container-org812a66b" class="outline-3">
+<h3 id="org812a66b">Some helpers</h3>
+<div class="outline-text-3" id="text-org812a66b">
+<p>
+There are a few Common Lisp functions that have no direct equivalent in R, so
+I&rsquo;ve translated some to make the implementations look similar.
+</p>
+</div>
+
+<div id="outline-container-org91c3092" class="outline-4">
+<h4 id="org91c3092">Grabbing a certain item from a list by position</h4>
+<div class="outline-text-4" id="text-org91c3092">
+<p>
+For example:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span>third '<span style="color: #c678dd;">(</span>one two three four five<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+THREE
+</pre>
+
+
+<p>
+Can be accomplished with a partial <code>dplyr::nth</code>:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">second <span style="color: #a9a1e1;">&lt;-</span> purrr::partial(dplyr::nth, n = <span style="color: #da8548; font-weight: bold;">2</span>)
+third <span style="color: #a9a1e1;">&lt;-</span> purrr::partial(dplyr::nth, n = <span style="color: #da8548; font-weight: bold;">3</span>)
+fourth <span style="color: #a9a1e1;">&lt;-</span> purrr::partial(dplyr::nth, n = <span style="color: #da8548; font-weight: bold;">4</span>)
+
+third(exprs(a, b, c, d))
+</pre>
+</div>
+
+<pre class="example">
+c
+</pre>
+</div>
+</div>
+
+<div id="outline-container-orgbd0384d" class="outline-4">
+<h4 id="orgbd0384d">Looking up a nested list in a lists-of-lists</h4>
+<div class="outline-text-4" id="text-orgbd0384d">
+<p>
+For example (using the first position of the nested lists as keys):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span>assoc 'd '<span style="color: #c678dd;">(</span><span style="color: #98be65;">(</span>a b c<span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span>d e f<span style="color: #98be65;">)</span> <span style="color: #98be65;">(</span>g h i<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+(D E F)
+</pre>
+
+
+<p>
+Can be accomplished as such:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #c678dd;">assoc</span> <span style="color: #a9a1e1;">&lt;-</span> <span style="color: #51afef;">function</span>(id, nodes) {
+  id <span style="color: #a9a1e1;">&lt;-</span> bquote(.(id))
+  purrr::detect(nodes, \(x) x[[<span style="color: #da8548; font-weight: bold;">1</span>]] == id)
+}
+
+assoc(quote(d), list(exprs(a, b, c), exprs(d, e, f), exprs(g, h, i)))
+</pre>
+</div>
+
+<pre class="example">
+[[1]]
+d
+
+[[2]]
+e
+
+[[3]]
+f
+</pre>
+</div>
+</div>
+</div>
+
+
+<div id="outline-container-org66fab5e" class="outline-3">
+<h3 id="org66fab5e">Compiling the Network</h3>
+<div class="outline-text-3" id="text-org66fab5e">
+<p>
+At this point there is no hard link between nodes, they only know of the next
+node&rsquo;s ID for yes or no answers if applicable. To form the network (i.e.
+actually link nodes together), it is &ldquo;compiled&rdquo; by starting with a given root
+node and returning a function that will prompt for a yes/no answer, which in
+turn will ask the question from the next node depending on the answer given
+previously.
+</p>
+
+<p>
+The the Common Lisp implementation is repeated here, annotated with comments
+that I made while trying to understand what is going on.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span><span style="color: #51afef;">defun</span> <span style="color: #c678dd;">compile-net</span> <span style="color: #c678dd;">(</span>root<span style="color: #c678dd;">)</span>
+  <span style="color: #5B6268;">;; </span><span style="color: #5B6268;">get the node from *nodes*</span>
+  <span style="color: #c678dd;">(</span><span style="color: #51afef;">let</span> <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>node <span style="color: #51afef;">(</span>assoc root *nodes*<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+    <span style="color: #98be65;">(</span><span style="color: #51afef;">if</span> <span style="color: #a9a1e1;">(</span>null node<span style="color: #a9a1e1;">)</span>
+        <span style="color: #5B6268;">;; </span><span style="color: #5B6268;">if the node doesn't exist stop</span>
+        nil
+        <span style="color: #5B6268;">;; </span><span style="color: #5B6268;">otherwise get the 2nd, 3rd, and 4th pieces of the list (node)</span>
+        <span style="color: #a9a1e1;">(</span><span style="color: #51afef;">let</span> <span style="color: #51afef;">(</span><span style="color: #c678dd;">(</span>conts <span style="color: #98be65;">(</span>second node<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+              <span style="color: #c678dd;">(</span>yes <span style="color: #98be65;">(</span>third node<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+              <span style="color: #c678dd;">(</span>no <span style="color: #98be65;">(</span>fourth node<span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+          <span style="color: #5B6268;">;; </span><span style="color: #5B6268;">if theres something in the yes slot</span>
+          <span style="color: #51afef;">(</span><span style="color: #51afef;">if</span> yes
+              <span style="color: #5B6268;">;; </span><span style="color: #5B6268;">there must be yes/no funs, so get references to them after compilation</span>
+              <span style="color: #c678dd;">(</span><span style="color: #51afef;">let</span> <span style="color: #98be65;">(</span><span style="color: #a9a1e1;">(</span>yes-fn <span style="color: #51afef;">(</span>compile-net yes<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span>
+                    <span style="color: #a9a1e1;">(</span>no-fn <span style="color: #51afef;">(</span>compile-net no<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span>
+                <span style="color: #5B6268;">;; </span><span style="color: #5B6268;">return a function with no args</span>
+                #'<span style="color: #98be65;">(</span><span style="color: #51afef;">lambda</span> <span style="color: #a9a1e1;">()</span>
+                    <span style="color: #5B6268;">;; </span><span style="color: #5B6268;">prints the conts</span>
+                    <span style="color: #a9a1e1;">(</span>format t <span style="color: #98be65;">"~A~%&gt;&gt; "</span> conts<span style="color: #a9a1e1;">)</span>
+                    <span style="color: #5B6268;">;; </span><span style="color: #5B6268;">run the yes-fn if yes is entered, no-fn otherwise</span>
+                    <span style="color: #a9a1e1;">(</span>funcall <span style="color: #51afef;">(</span><span style="color: #51afef;">if</span> <span style="color: #c678dd;">(</span>eq <span style="color: #98be65;">(</span>read<span style="color: #98be65;">)</span> 'yes<span style="color: #c678dd;">)</span>
+                                 yes-fn
+                                 no-fn<span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span>
+              <span style="color: #5B6268;">;; </span><span style="color: #5B6268;">return a function that just returns the conts</span>
+              #'<span style="color: #c678dd;">(</span><span style="color: #51afef;">lambda</span> <span style="color: #98be65;">()</span> conts<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span><span style="color: #a9a1e1;">)</span><span style="color: #98be65;">)</span><span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+COMPILE-NET
+</pre>
+
+
+<p>
+There is only one path through the network actually implemented, which I will emulate.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-lisp"><span style="color: #51afef;">(</span>funcall <span style="color: #c678dd;">(</span>compile-net 'people<span style="color: #c678dd;">)</span><span style="color: #51afef;">)</span>
+</pre>
+</div>
+
+<pre class="example">
+&gt;&gt; Is the person a man? yes
+&gt;&gt; Is he living? no
+&gt;&gt; Was he American? yes
+&gt;&gt; Is he on a coin? yes
+&gt;&gt; Is the coin a penny? yes
+LINCOLN
+</pre>
+
+
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #c678dd;">compile_net</span> <span style="color: #a9a1e1;">&lt;-</span> <span style="color: #51afef;">function</span>(root) {
+  node <span style="color: #a9a1e1;">&lt;-</span> assoc(root, nodes)
+
+  <span style="color: #51afef;">if</span> (is.null(node)) {
+    <span style="color: #51afef;">return</span>(<span style="color: #ECBE7B;">NULL</span>)
+  }
+
+  conts <span style="color: #a9a1e1;">&lt;-</span> second(node)
+  yes <span style="color: #a9a1e1;">&lt;-</span> third(node)
+  no <span style="color: #a9a1e1;">&lt;-</span> fourth(node)
+
+  <span style="color: #51afef;">if</span> (!is.null(yes)) {
+    yes_fn <span style="color: #a9a1e1;">&lt;-</span> compile_net(yes)
+    no_fn <span style="color: #a9a1e1;">&lt;-</span> compile_net(no)
+
+    <span style="color: #51afef;">function</span>() {
+      print(conts)
+      response <span style="color: #a9a1e1;">&lt;-</span> readline(<span style="color: #98be65;">"&gt;&gt;  "</span>)
+      <span style="color: #51afef;">if</span> (response == <span style="color: #98be65;">"yes"</span>) {
+        yes_fn()
+      } <span style="color: #51afef;">else</span> {
+        no_fn()
+      }
+    }
+  } <span style="color: #51afef;">else</span> {
+    <span style="color: #51afef;">function</span>() conts
+  }
+}
+
+
+exec(compile_net(quote(people)))
+</pre>
+</div>
+
+<pre class="example" id="orgab78b52">
+`Is the person a man?`
+&gt;&gt;  yes
+`Is he living?`
+&gt;&gt;  no
+`Was he American?`
+&gt;&gt;  yes
+`Is he on a coin?`
+&gt;&gt;  yes
+`Is the coin a penny?`
+&gt;&gt;  yes
+lincoln
+</pre>
+</div>
+</div>
+</div>
+</div></div></body></html>

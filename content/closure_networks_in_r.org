@@ -1,0 +1,257 @@
+#+title: Closure Networks in R
+#+date: 2023-05-16
+#+tags: R commonlisp
+#+property: header-args    :exports both :eval never-export
+#+property: header-args:R  :session *R-closurenetwork*
+#+property: header-args:lisp :exports both :results verbatim
+#+doctype: post
+
+
+* Closure Networks in R
+I've been working through some topics in Paul Graham's "On Lisp" and recently
+read the chapter on Functions as Representation for the first time. He presents
+an example of using closures to define and traverse a network, a binary tree
+representation of a game of 21 question in this instance. I thought it would be
+a good exercise to help my understanding of the concept to try and reproduce his
+Common Lisp example using R, which has a lot in common with lisp flavors.
+
+** Data model
+
+Nodal information is stored in flat lists, with certain information going in
+specific positions:
+
+1. The node's ID
+2. The question to ask
+3. The next node ID should the answer be "yes"
+4. The next node ID should the answer be "no"
+
+For example, the following puts the ~people~ node on the list:
+
+#+begin_src lisp
+(defvar *nodes* nil)
+
+(defun defnode (&rest args)
+  (push args *nodes*)
+  args)
+
+(defnode 'people "Is the person a man?" 'male 'female)
+(defnode 'male "Is he living?" 'liveman 'deadman)
+(defnode 'deadman "Was he American?" 'us 'them)
+(defnode 'us "Is he on a coin?" 'coin 'cidence)
+(defnode 'coin "Is the coin a penny?" 'penny 'coins)
+(defnode 'penny 'lincoln)
+
+(assoc 'people *nodes*)
+#+end_src
+
+#+RESULTS:
+: (PEOPLE "Is the person a man?" MALE FEMALE)
+
+We can stick with this simple list of nodes since this is just a toy example.
+Note the use of the superassignment operator ~<<-~ in this fashion is generally
+frowned upon but again this is just to demonstrate concepts. Inputs are captures
+as symbols to make calling the R function look like calling the lisp function,
+though this isn't the most idiomatic R.
+
+#+begin_src R :results output
+library(rlang)
+
+nodes <- list()
+
+defnode <- function(...) {
+  nodes <<- append(nodes, list(ensyms(...)))
+}
+
+defnode(people, "Is the person a man?", male, female)
+defnode(male, "Is he living?", liveman, deadman)
+defnode(deadman, "Was he American?", us, them)
+defnode(us, "Is he on a coin?", coin, cidence)
+defnode(coin, "Is the coin a penny?", penny, coins)
+defnode(penny, lincoln)
+
+nodes[[1]]
+#+end_src
+
+#+RESULTS:
+#+begin_example
+[[1]]
+people
+
+[[2]]
+`Is the person a man?`
+
+[[3]]
+male
+
+[[4]]
+female
+#+end_example
+
+** Some helpers
+
+There are a few Common Lisp functions that have no direct equivalent in R, so
+I've translated some to make the implementations look similar.
+
+*** Grabbing a certain item from a list by position
+
+For example:
+
+#+begin_src lisp
+(third '(one two three four five))
+#+end_src
+
+#+RESULTS:
+: THREE
+
+Can be accomplished with a partial ~dplyr::nth~:
+
+#+begin_src R :results output
+second <- purrr::partial(dplyr::nth, n = 2)
+third <- purrr::partial(dplyr::nth, n = 3)
+fourth <- purrr::partial(dplyr::nth, n = 4)
+
+third(exprs(a, b, c, d))
+#+end_src
+
+#+RESULTS:
+: c
+
+*** Looking up a nested list in a lists-of-lists
+
+
+For example (using the first position of the nested lists as keys):
+
+#+begin_src lisp
+(assoc 'd '((a b c) (d e f) (g h i)))
+#+end_src
+
+#+RESULTS:
+: (D E F)
+
+Can be accomplished as such:
+
+#+begin_src R :results output
+assoc <- function(id, nodes) {
+  id <- bquote(.(id))
+  purrr::detect(nodes, \(x) x[[1]] == id)
+}
+
+assoc(quote(d), list(exprs(a, b, c), exprs(d, e, f), exprs(g, h, i)))
+#+end_src
+
+#+RESULTS:
+: [[1]]
+: d
+:
+: [[2]]
+: e
+:
+: [[3]]
+: f
+
+
+** Compiling the Network
+
+At this point there is no hard link between nodes, they only know of the next
+node's ID for yes or no answers if applicable. To form the network (i.e.
+actually link nodes together), it is "compiled" by starting with a given root
+node and returning a function that will prompt for a yes/no answer, which in
+turn will ask the question from the next node depending on the answer given
+previously.
+
+The the Common Lisp implementation is repeated here, annotated with comments
+that I made while trying to understand what is going on.
+
+#+begin_src lisp
+(defun compile-net (root)
+  ;; get the node from *nodes*
+  (let ((node (assoc root *nodes*)))
+    (if (null node)
+        ;; if the node doesn't exist stop
+        nil
+        ;; otherwise get the 2nd, 3rd, and 4th pieces of the list (node)
+        (let ((conts (second node))
+              (yes (third node))
+              (no (fourth node)))
+          ;; if theres something in the yes slot
+          (if yes
+              ;; there must be yes/no funs, so get references to them after compilation
+              (let ((yes-fn (compile-net yes))
+                    (no-fn (compile-net no)))
+                ;; return a function with no args
+                #'(lambda ()
+                    ;; prints the conts
+                    (format t "~A~%>> " conts)
+                    ;; run the yes-fn if yes is entered, no-fn otherwise
+                    (funcall (if (eq (read) 'yes)
+                                 yes-fn
+                                 no-fn))))
+              ;; return a function that just returns the conts
+              #'(lambda () conts))))))
+#+end_src
+
+#+RESULTS:
+: COMPILE-NET
+
+There is only one path through the network actually implemented, which I will emulate.
+
+#+begin_src lisp
+(funcall (compile-net 'people))
+#+end_src
+
+#+RESULTS:
+: >> Is the person a man? yes
+: >> Is he living? no
+: >> Was he American? yes
+: >> Is he on a coin? yes
+: >> Is the coin a penny? yes
+: LINCOLN
+
+#+begin_src R
+compile_net <- function(root) {
+  node <- assoc(root, nodes)
+
+  if (is.null(node)) {
+    return(NULL)
+  }
+
+  conts <- second(node)
+  yes <- third(node)
+  no <- fourth(node)
+
+  if (!is.null(yes)) {
+    yes_fn <- compile_net(yes)
+    no_fn <- compile_net(no)
+
+    function() {
+      print(conts)
+      response <- readline(">>  ")
+      if (response == "yes") {
+        yes_fn()
+      } else {
+        no_fn()
+      }
+    }
+  } else {
+    function() conts
+  }
+}
+
+
+exec(compile_net(quote(people)))
+#+end_src
+
+#+RESULTS:
+#+begin_example
+`Is the person a man?`
+>>  yes
+`Is he living?`
+>>  no
+`Was he American?`
+>>  yes
+`Is he on a coin?`
+>>  yes
+`Is the coin a penny?`
+>>  yes
+lincoln
+#+end_example
