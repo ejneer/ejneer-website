@@ -26,31 +26,31 @@
                "\n")))
 #+end_src
 
-* Select Experience
+* Prior Experience
 
 #+begin_src elisp :wrap export html :exports results
-(defun employment-table (title employer start end location)
-  (shr-dom-to-xml
-   `(tbody ()
-     (tr ()
-         (td () ,end)
-         (td () ,start)
-         (td () (b () ,title))
-         (td () ,location))
-     (tr ()
-         (td () "")
-         (td () "")
-         (td () ,employer)
-         (td () "")))))
+  (defun employment-table (title employer start end location)
+    (shr-dom-to-xml
+     `(tbody ()
+       (tr ()
+  	 (td () (b () ,title))
+           (td () "")
+           (td () "")
+           (td () ,location))
+       (tr ()
+  	 (td () ,employer)
+           (td () "")
+           (td () "")
+           (td () "")))))
 
-(shr-dom-to-xml
- `(table ()
-   ,(mapconcat (lambda (x) (apply #'employment-table x))
-               '(("Data Scientist" "Mercury Insurance" "June 2021" "Present" "Remote, CA")
-                 ("Data Scientist" "Stanley Black & Decker" "Nov 2019" "June 2021" "Brea, CA")
-                 ("Engineer, F-35 Program" "Northrop Grumman" "Feb 2016" "Aug 2019" "Redondo Beach, CA")
-                 ("Project Engineer" "Solvay (Cytec)" "Sep 2014" "Feb 2016" "Santa Fe Springs, CA"))
-               "\n")))
+  (shr-dom-to-xml
+   `(table ()
+     ,(mapconcat (lambda (x) (apply #'employment-table x))
+                 '(("Data Scientist" "Mercury Insurance" "June 2021" "Present" "Remote, CA")
+                   ("Data Scientist" "Stanley Black & Decker" "Nov 2019" "June 2021" "Brea, CA")
+                   ("Engineer, F-35 Program" "Northrop Grumman" "Feb 2016" "Aug 2019" "Redondo Beach, CA")
+                   ("Project Engineer" "Solvay (Cytec)" "Sep 2014" "Feb 2016" "Santa Fe Springs, CA"))
+                 "\n")))
 #+end_src
 
 * Publications
