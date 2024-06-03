@@ -1,0 +1,514 @@
+<!DOCTYPE html><html lang="en"><head> <meta charset="utf-8" author="Eric Neer" name="viewport" content="width=device-width, initial-scale=1"></meta> <title>Postgres FDW for ReadStat / SAS - Eric Neer</title> <link href="/static/styles.css" rel="stylesheet"></link> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"></link> <link href="/static/favicon.png" rel="icon" type="image/x-icon"></link> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body> <div><div class="sidebar"> <div class="header"> <a href="/"> <img src="/static/pic.jpeg" width="150" style="border-radius: 50%;"></img></a> <p class="lead">Data Scientist & Engineer</p> <p class="lead">Mercury Insurance</p> <br></br><div class="sidebar-nav-item"> <i class="fa-solid fa-id-card"></i> <a href="/cv.html">CV</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-github"></i> <a href="https://github.com/ejneer">GitHub</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-linkedin"></i> <a href="https://www.linkedin.com/in/eric-neer/">LinkedIn</a></div><div class="footer"> <p>Made with <a href="https://www.gnu.org/software/emacs/">Emacs</a> 29.1 (<a href="https://orgmode.org">Org</a> mode 9.7-pre)</p></div></div></div> <div class="content"><div id="outline-container-org7ed3353" class="outline-2">
+<h2 id="org7ed3353">Intro</h2>
+<div class="outline-text-2" id="text-org7ed3353">
+<p>
+<a href="https://github.com/WizardMac/ReadStat">ReadStat</a> is a C library used to read and write various formats common in
+statistical analyses. I was first exposed to (and mostly use) it through R's
+<a href="https://github.com/tidyverse/haven">haven</a> library for interacting with SAS data, a common format in insurance and
+pharma. I am also a frequent user of <a href="https://github.com/tidyverse/dbplyr">dbplyr</a> to analyze data living in (or at
+least being served from) a database and thought would be an interesting learning
+exercise to combine these topics through creating a <a href="https://www.postgresql.org/docs/current/fdwhandler.html">postgres foreign data
+wrapper</a> for ReadStat.
+</p>
+
+<p>
+Postgres comes with a generic file foreign data wrapper (<a href="https://www.postgresql.org/docs/current/file-fdw.html">file<sub>fdw</sub></a>) that can
+serve data from any format that can be read with the <a href="https://www.postgresql.org/docs/current/sql-copy.html"><code>COPY FROM</code></a> command,
+e.g. CSV. ReadStat ships with a converter to produce SAS (or other supported
+filetype) data as CSV. Wiring these together through a file fdw should allow for
+a quick first implementation of serving SAS data through postgres.
+</p>
+</div>
+</div>
+<div id="outline-container-org032884e" class="outline-2">
+<h2 id="org032884e">Implementation</h2>
+<div class="outline-text-2" id="text-org032884e">
+</div>
+<div id="outline-container-orgf57b742" class="outline-3">
+<h3 id="orgf57b742">Dockerfile setup</h3>
+<div class="outline-text-3" id="text-orgf57b742">
+<p>
+This postgres Dockerfile clones and installs ReadStat for command line
+use.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-dockerfile"><span style="color: #531ab6;">FROM</span> <span style="color: #005f5f; font-weight: bold;">postgres:16</span>
+<span style="color: #531ab6;">RUN</span> apt-get update &amp;&amp; <span style="color: #3548cf;">\</span>
+    <span style="color: #7f0000;"># </span><span style="color: #7f0000;">readstat build deps</span>
+    apt-get -y install make git autotools-dev libtool gettext &amp;&amp; <span style="color: #3548cf;">\</span>
+    git clone https://github.com/WizardMac/ReadStat.git
+<span style="color: #531ab6;">WORKDIR</span> /ReadStat
+<span style="color: #531ab6;">RUN</span> git checkout v1.1.9
+<span style="color: #531ab6;">RUN</span> ./autogen.sh &amp;&amp; ./configure --prefix /usr/local
+<span style="color: #531ab6;">RUN</span> make &amp;&amp; make install
+<span style="color: #531ab6;">RUN</span> echo <span style="color: #3548cf;">"/usr/local/lib/"</span> &gt;&gt; /etc/ld.so.conf 
+<span style="color: #531ab6;">RUN</span> ldconfig
+</pre>
+</div>
+
+<p>
+Build the image.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">docker build . -t readstatfilefdw:latest
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org827e4d8" class="outline-3">
+<h3 id="org827e4d8">Sample Data</h3>
+<div class="outline-text-3" id="text-org827e4d8">
+<p>
+I'll use the <code>mtcars</code> dataset to test things out and demonstrate the
+command line output of ReadStat.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">tibble::as_tibble(mtcars, rownames = <span style="color: #3548cf;">"model"</span>) |&gt;
+  haven::write_sas(<span style="color: #3548cf;">"data/mtcars.sas7bdat"</span>)
+</pre>
+</div>
+
+<p>
+Converting data and printing to stdout:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">readstat data/mtcars.sas7bdat - | head -n 6
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">model</td>
+<td class="org-right">mpg</td>
+<td class="org-right">cyl</td>
+<td class="org-right">disp</td>
+<td class="org-right">hp</td>
+<td class="org-right">drat</td>
+<td class="org-right">wt</td>
+<td class="org-right">qsec</td>
+<td class="org-right">vs</td>
+<td class="org-right">am</td>
+<td class="org-right">gear</td>
+<td class="org-right">carb</td>
+</tr>
+
+<tr>
+<td class="org-left">Mazda RX4</td>
+<td class="org-right">21.0</td>
+<td class="org-right">6.0</td>
+<td class="org-right">160.0</td>
+<td class="org-right">110.0</td>
+<td class="org-right">3.9</td>
+<td class="org-right">2.62</td>
+<td class="org-right">16.46</td>
+<td class="org-right">0.0</td>
+<td class="org-right">1.0</td>
+<td class="org-right">4.0</td>
+<td class="org-right">4.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Mazda RX4 Wag</td>
+<td class="org-right">21.0</td>
+<td class="org-right">6.0</td>
+<td class="org-right">160.0</td>
+<td class="org-right">110.0</td>
+<td class="org-right">3.9</td>
+<td class="org-right">2.875</td>
+<td class="org-right">17.02</td>
+<td class="org-right">0.0</td>
+<td class="org-right">1.0</td>
+<td class="org-right">4.0</td>
+<td class="org-right">4.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Datsun 710</td>
+<td class="org-right">22.8</td>
+<td class="org-right">4.0</td>
+<td class="org-right">108.0</td>
+<td class="org-right">93.0</td>
+<td class="org-right">3.85</td>
+<td class="org-right">2.32</td>
+<td class="org-right">18.61</td>
+<td class="org-right">1.0</td>
+<td class="org-right">1.0</td>
+<td class="org-right">4.0</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Hornet 4 Drive</td>
+<td class="org-right">21.4</td>
+<td class="org-right">6.0</td>
+<td class="org-right">258.0</td>
+<td class="org-right">110.0</td>
+<td class="org-right">3.08</td>
+<td class="org-right">3.215</td>
+<td class="org-right">19.44</td>
+<td class="org-right">1.0</td>
+<td class="org-right">0.0</td>
+<td class="org-right">3.0</td>
+<td class="org-right">1.0</td>
+</tr>
+
+<tr>
+<td class="org-left">Hornet Sportabout</td>
+<td class="org-right">18.7</td>
+<td class="org-right">8.0</td>
+<td class="org-right">360.0</td>
+<td class="org-right">175.0</td>
+<td class="org-right">3.15</td>
+<td class="org-right">3.44</td>
+<td class="org-right">17.02</td>
+<td class="org-right">0.0</td>
+<td class="org-right">0.0</td>
+<td class="org-right">3.0</td>
+<td class="org-right">2.0</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div id="outline-container-orgd8b5b63" class="outline-3">
+<h3 id="orgd8b5b63">Setting up the FDW</h3>
+<div class="outline-text-3" id="text-orgd8b5b63">
+<p>
+Use the default postgres user and password, as well as mouting my
+local data folder as a volume into the container:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-shell">docker container run -e <span style="color: #005e8b;">POSTGRES_PASSWORD</span>=password -i -p 5432:5432 -t -v ${<span style="color: #005e8b;">PWD</span>}/data/:/data/ readstatfilefdw:latest
+</pre>
+</div>
+
+<p>
+Creating the extension and defining a table with appropriate data
+types is as follows:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sql"><span style="color: #531ab6;">CREATE</span> <span style="color: #8f0075;">EXTENSION</span> file_fdw;
+
+<span style="color: #531ab6;">CREATE</span> <span style="color: #8f0075;">SERVER</span> readstat_file_fdw <span style="color: #531ab6;">FOREIGN</span> <span style="color: #8f0075;">DATA</span> <span style="color: #8f0075;">WRAPPER</span> file_fdw;
+
+<span style="color: #531ab6;">CREATE</span> <span style="color: #531ab6;">FOREIGN</span> <span style="color: #531ab6;">TABLE</span> <span style="color: #721045;">mtcars</span> (
+    model <span style="color: #005f5f;">text</span>,
+    mpg <span style="color: #005f5f;">numeric</span>,
+    cyl <span style="color: #005f5f;">numeric</span>,
+    disp <span style="color: #005f5f;">numeric</span>,
+    hp <span style="color: #005f5f;">numeric</span>,
+    drat <span style="color: #005f5f;">numeric</span>,
+    wt <span style="color: #005f5f;">numeric</span>,
+    qsec <span style="color: #005f5f;">numeric</span>,
+    vs <span style="color: #005f5f;">numeric</span>,
+    am <span style="color: #005f5f;">numeric</span>,
+    gear <span style="color: #005f5f;">numeric</span>,
+    carb <span style="color: #005f5f;">numeric</span>
+)
+<span style="color: #8f0075;">SERVER</span> readstat_file_fdw <span style="color: #8f0075;">OPTIONS</span> (
+    PROGRAM <span style="color: #3548cf;">'readstat /data/mtcars.sas7bdat -'</span>,
+    FORMAT <span style="color: #3548cf;">'csv'</span>,
+    <span style="color: #8f0075;">HEADER</span> <span style="color: #3548cf;">'on'</span>
+);
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+</colgroup>
+<tbody>
+<tr>
+<td class="org-left">CREATE FOREIGN TABLE</td>
+</tr>
+</tbody>
+</table>
+
+<p>
+Note that the <code>PROGRAM</code> option is used to tell postgres to call the
+readstat cli tool against the mtcars dataset. This means that, even
+though the fdw is called a "file" fdw, it can operate on the results
+produced by arbitrary command line tools.  Here <code>readstat
+/data/mtcars.sas7bdat -</code> converts the <code>sas7bdat</code> dataset and prints
+results to STDOUT.
+</p>
+</div>
+</div>
+<div id="outline-container-org25c59d8" class="outline-3">
+<h3 id="org25c59d8">Using the FDW</h3>
+<div class="outline-text-3" id="text-org25c59d8">
+<p>
+Now we can treat the external <code>mtcars.sas7bdat</code> dataset as a regular
+SQL table.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-sql"><span style="color: #531ab6;">SELECT</span> * <span style="color: #531ab6;">FROM</span> mtcars <span style="color: #531ab6;">LIMIT</span> 5;
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">model</th>
+<th scope="col" class="org-right">mpg</th>
+<th scope="col" class="org-right">cyl</th>
+<th scope="col" class="org-right">disp</th>
+<th scope="col" class="org-right">hp</th>
+<th scope="col" class="org-right">drat</th>
+<th scope="col" class="org-right">wt</th>
+<th scope="col" class="org-right">qsec</th>
+<th scope="col" class="org-right">vs</th>
+<th scope="col" class="org-right">am</th>
+<th scope="col" class="org-right">gear</th>
+<th scope="col" class="org-right">carb</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Mazda RX4</td>
+<td class="org-right">21.000000</td>
+<td class="org-right">6.000000</td>
+<td class="org-right">160.000000</td>
+<td class="org-right">110.000000</td>
+<td class="org-right">3.900000</td>
+<td class="org-right">2.620000</td>
+<td class="org-right">16.460000</td>
+<td class="org-right">0.000000</td>
+<td class="org-right">1.000000</td>
+<td class="org-right">4.000000</td>
+<td class="org-right">4.000000</td>
+</tr>
+
+<tr>
+<td class="org-left">Mazda RX4 Wag</td>
+<td class="org-right">21.000000</td>
+<td class="org-right">6.000000</td>
+<td class="org-right">160.000000</td>
+<td class="org-right">110.000000</td>
+<td class="org-right">3.900000</td>
+<td class="org-right">2.875000</td>
+<td class="org-right">17.020000</td>
+<td class="org-right">0.000000</td>
+<td class="org-right">1.000000</td>
+<td class="org-right">4.000000</td>
+<td class="org-right">4.000000</td>
+</tr>
+
+<tr>
+<td class="org-left">Datsun 710</td>
+<td class="org-right">22.800000</td>
+<td class="org-right">4.000000</td>
+<td class="org-right">108.000000</td>
+<td class="org-right">93.000000</td>
+<td class="org-right">3.850000</td>
+<td class="org-right">2.320000</td>
+<td class="org-right">18.610000</td>
+<td class="org-right">1.000000</td>
+<td class="org-right">1.000000</td>
+<td class="org-right">4.000000</td>
+<td class="org-right">1.000000</td>
+</tr>
+
+<tr>
+<td class="org-left">Hornet 4 Drive</td>
+<td class="org-right">21.400000</td>
+<td class="org-right">6.000000</td>
+<td class="org-right">258.000000</td>
+<td class="org-right">110.000000</td>
+<td class="org-right">3.080000</td>
+<td class="org-right">3.215000</td>
+<td class="org-right">19.440000</td>
+<td class="org-right">1.000000</td>
+<td class="org-right">0.000000</td>
+<td class="org-right">3.000000</td>
+<td class="org-right">1.000000</td>
+</tr>
+
+<tr>
+<td class="org-left">Hornet Sportabout</td>
+<td class="org-right">18.700000</td>
+<td class="org-right">8.000000</td>
+<td class="org-right">360.000000</td>
+<td class="org-right">175.000000</td>
+<td class="org-right">3.150000</td>
+<td class="org-right">3.440000</td>
+<td class="org-right">17.020000</td>
+<td class="org-right">0.000000</td>
+<td class="org-right">0.000000</td>
+<td class="org-right">3.000000</td>
+<td class="org-right">2.000000</td>
+</tr>
+</tbody>
+</table>
+
+<div class="org-src-container">
+<pre class="src src-sql"><span style="color: #8f0075;">EXPLAIN</span> <span style="color: #531ab6;">ANALYZE</span> <span style="color: #531ab6;">SELECT</span> * <span style="color: #531ab6;">FROM</span> mtcars <span style="color: #531ab6;">LIMIT</span> 5;
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-left" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-left">QUERY PLAN</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-left">Limit  (cost=0.00..0.75 rows=5 width=384) (actual time=8.098..8.122 rows=5 loops=1)</td>
+</tr>
+
+<tr>
+<td class="org-left">-&gt;  Foreign Scan on mtcars  (cost=0.00..30.10 rows=201 width=384) (actual time=8.096..8.118 rows=5 loops=1)</td>
+</tr>
+
+<tr>
+<td class="org-left">Foreign Program: readstat /data/mtcars.sas7bdat -</td>
+</tr>
+
+<tr>
+<td class="org-left">Planning Time: 0.842 ms</td>
+</tr>
+
+<tr>
+<td class="org-left">Execution Time: 8.861 ms</td>
+</tr>
+</tbody>
+</table>
+
+<div class="org-src-container">
+<pre class="src src-sql"><span style="color: #531ab6;">SELECT</span> cyl, <span style="color: #8f0075;">count</span>(*), <span style="color: #8f0075;">AVG</span>(hp)
+<span style="color: #531ab6;">FROM</span> mtcars
+<span style="color: #531ab6;">GROUP</span> <span style="color: #8f0075;">BY</span> cyl
+</pre>
+</div>
+
+<table border="2" cellspacing="0" cellpadding="6" rules="groups" frame="hsides">
+
+
+<colgroup>
+<col  class="org-right" />
+
+<col  class="org-right" />
+
+<col  class="org-right" />
+</colgroup>
+<thead>
+<tr>
+<th scope="col" class="org-right">cyl</th>
+<th scope="col" class="org-right">count</th>
+<th scope="col" class="org-right">avg</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="org-right">4.000000</td>
+<td class="org-right">11</td>
+<td class="org-right">82.6363636363636364</td>
+</tr>
+
+<tr>
+<td class="org-right">6.000000</td>
+<td class="org-right">7</td>
+<td class="org-right">122.2857142857142857</td>
+</tr>
+
+<tr>
+<td class="org-right">8.000000</td>
+<td class="org-right">14</td>
+<td class="org-right">209.2142857142857143</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<div id="outline-container-orgf1324b3" class="outline-2">
+<h2 id="orgf1324b3">Summary</h2>
+<div class="outline-text-2" id="text-orgf1324b3">
+<p>
+Going through this exercise I've learned the built in <code>file_fdw</code> of
+postgres allows one to get up and running very quickly with any
+dataset that is supported by <code>COPY</code> or a command line tool that can
+produce such a dataset, as ReadStat does.
+</p>
+
+<p>
+For further work, I'd like to investigate the performance of this
+file<sub>fdw</sub> on a much larger dataset. I suspect that performance will
+degrade on large datasets since they must be loaded entirely into
+memory before postgres may operate on them. Ideally, things like
+<code>LIMIT</code> and <code>WHERE</code> filters could be pushed down to the ReadStat
+level, which I don't think is possible in the implementation here.
+</p>
+</div>
+</div>
+</div></div></body></html>

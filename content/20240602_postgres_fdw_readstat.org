@@ -1,0 +1,182 @@
+#+title: Postgres FDW for ReadStat / SAS
+#+subtitle: Part 1 - Using File FDW
+#+author: Eric Neer
+#+date: 2024-06-02
+#+tags: postgres readstat docker
+#+doctype: post
+#+property: header-args :exports both :eval never-export :mkdirp t :dir 20240602_postgres_fdw_readstat
+#+property: header-args:sql :engine postgres :dbhost localhost :dbport 5432 :dbuser postgres :dbpassword password :database postgres
+
+* Intro
+[[https://github.com/WizardMac/ReadStat][ReadStat]] is a C library used to read and write various formats common in
+statistical analyses. I was first exposed to (and mostly use) it through R's
+[[https://github.com/tidyverse/haven][haven]] library for interacting with SAS data, a common format in insurance and
+pharma. I am also a frequent user of [[https://github.com/tidyverse/dbplyr][dbplyr]] to analyze data living in (or at
+least being served from) a database and thought would be an interesting learning
+exercise to combine these topics through creating a [[https://www.postgresql.org/docs/current/fdwhandler.html][postgres foreign data
+wrapper]] for ReadStat.
+
+Postgres comes with a generic file foreign data wrapper ([[https://www.postgresql.org/docs/current/file-fdw.html][file_fdw]]) that can
+serve data from any format that can be read with the [[https://www.postgresql.org/docs/current/sql-copy.html][~COPY FROM~]] command,
+e.g. CSV. ReadStat ships with a converter to produce SAS (or other supported
+filetype) data as CSV. Wiring these together through a file fdw should allow for
+a quick first implementation of serving SAS data through postgres.
+
+* Implementation
+
+** Dockerfile setup
+
+This postgres Dockerfile clones and installs ReadStat for command line
+use.
+
+#+begin_src dockerfile :tangle 20240602_postgres_fdw_readstat/Dockerfile
+  FROM postgres:16
+  RUN apt-get update && \
+      # readstat build deps
+      apt-get -y install make git autotools-dev libtool gettext && \
+      git clone https://github.com/WizardMac/ReadStat.git
+  WORKDIR /ReadStat
+  RUN git checkout v1.1.9
+  RUN ./autogen.sh && ./configure --prefix /usr/local
+  RUN make && make install
+  RUN echo "/usr/local/lib/" >> /etc/ld.so.conf 
+  RUN ldconfig
+#+end_src
+
+Build the image.
+
+#+begin_src shell
+  docker build . -t readstatfilefdw:latest
+#+end_src
+
+** Sample Data
+
+I'll use the ~mtcars~ dataset to test things out and demonstrate the
+command line output of ReadStat.
+
+#+begin_src R :dir 20240602_postgres_fdw_readstat 
+  tibble::as_tibble(mtcars, rownames = "model") |>
+    haven::write_sas("data/mtcars.sas7bdat")
+#+end_src
+
+Converting data and printing to stdout:
+
+#+begin_src shell 
+  readstat data/mtcars.sas7bdat - | head -n 6
+#+end_src
+
+#+RESULTS:
+| model             |  mpg | cyl |  disp |    hp | drat |    wt |  qsec |  vs |  am | gear | carb |
+| Mazda RX4         | 21.0 | 6.0 | 160.0 | 110.0 |  3.9 |  2.62 | 16.46 | 0.0 | 1.0 |  4.0 |  4.0 |
+| Mazda RX4 Wag     | 21.0 | 6.0 | 160.0 | 110.0 |  3.9 | 2.875 | 17.02 | 0.0 | 1.0 |  4.0 |  4.0 |
+| Datsun 710        | 22.8 | 4.0 | 108.0 |  93.0 | 3.85 |  2.32 | 18.61 | 1.0 | 1.0 |  4.0 |  1.0 |
+| Hornet 4 Drive    | 21.4 | 6.0 | 258.0 | 110.0 | 3.08 | 3.215 | 19.44 | 1.0 | 0.0 |  3.0 |  1.0 |
+| Hornet Sportabout | 18.7 | 8.0 | 360.0 | 175.0 | 3.15 |  3.44 | 17.02 | 0.0 | 0.0 |  3.0 |  2.0 |
+
+** Setting up the FDW
+
+Use the default postgres user and password, as well as mouting my
+local data folder as a volume into the container:
+
+#+begin_src shell
+  docker container run -e POSTGRES_PASSWORD=password -i -p 5432:5432 -t -v ${PWD}/data/:/data/ readstatfilefdw:latest
+#+end_src
+
+Creating the extension and defining a table with appropriate data
+types is as follows:
+
+#+begin_src sql
+  CREATE EXTENSION file_fdw;
+
+  CREATE SERVER readstat_file_fdw FOREIGN DATA WRAPPER file_fdw;
+
+  CREATE FOREIGN TABLE mtcars (
+      model text,
+      mpg numeric,
+      cyl numeric,
+      disp numeric,
+      hp numeric,
+      drat numeric,
+      wt numeric,
+      qsec numeric,
+      vs numeric,
+      am numeric,
+      gear numeric,
+      carb numeric
+  )
+  SERVER readstat_file_fdw OPTIONS (
+      PROGRAM 'readstat /data/mtcars.sas7bdat -',
+      FORMAT 'csv',
+      HEADER 'on'
+  );
+#+end_src
+
+#+RESULTS:
+| CREATE FOREIGN TABLE |
+|----------------------|
+
+Note that the ~PROGRAM~ option is used to tell postgres to call the
+readstat cli tool against the mtcars dataset. This means that, even
+though the fdw is called a "file" fdw, it can operate on the results
+produced by arbitrary command line tools.  Here ~readstat
+/data/mtcars.sas7bdat -~ converts the ~sas7bdat~ dataset and prints
+results to STDOUT.
+
+** Using the FDW
+
+Now we can treat the external ~mtcars.sas7bdat~ dataset as a regular
+SQL table.
+
+#+begin_src sql
+  SELECT * FROM mtcars LIMIT 5;
+#+end_src
+
+#+RESULTS:
+| model             |       mpg |      cyl |       disp |         hp |     drat |       wt |      qsec |       vs |       am |     gear |     carb |
+|-------------------+-----------+----------+------------+------------+----------+----------+-----------+----------+----------+----------+----------|
+| Mazda RX4         | 21.000000 | 6.000000 | 160.000000 | 110.000000 | 3.900000 | 2.620000 | 16.460000 | 0.000000 | 1.000000 | 4.000000 | 4.000000 |
+| Mazda RX4 Wag     | 21.000000 | 6.000000 | 160.000000 | 110.000000 | 3.900000 | 2.875000 | 17.020000 | 0.000000 | 1.000000 | 4.000000 | 4.000000 |
+| Datsun 710        | 22.800000 | 4.000000 | 108.000000 |  93.000000 | 3.850000 | 2.320000 | 18.610000 | 1.000000 | 1.000000 | 4.000000 | 1.000000 |
+| Hornet 4 Drive    | 21.400000 | 6.000000 | 258.000000 | 110.000000 | 3.080000 | 3.215000 | 19.440000 | 1.000000 | 0.000000 | 3.000000 | 1.000000 |
+| Hornet Sportabout | 18.700000 | 8.000000 | 360.000000 | 175.000000 | 3.150000 | 3.440000 | 17.020000 | 0.000000 | 0.000000 | 3.000000 | 2.000000 |
+
+#+begin_src sql
+  EXPLAIN ANALYZE SELECT * FROM mtcars LIMIT 5;
+#+end_src
+
+#+RESULTS:
+| QUERY PLAN                                                                                                  |
+|-------------------------------------------------------------------------------------------------------------|
+| Limit  (cost=0.00..0.75 rows=5 width=384) (actual time=8.098..8.122 rows=5 loops=1)                         |
+| ->  Foreign Scan on mtcars  (cost=0.00..30.10 rows=201 width=384) (actual time=8.096..8.118 rows=5 loops=1) |
+| Foreign Program: readstat /data/mtcars.sas7bdat -                                                           |
+| Planning Time: 0.842 ms                                                                                     |
+| Execution Time: 8.861 ms                                                                                    |
+
+#+begin_src sql
+  SELECT cyl, count(*), AVG(hp)
+  FROM mtcars
+  GROUP BY cyl
+#+end_src
+
+#+RESULTS:
+|      cyl | count |                  avg |
+|----------+-------+----------------------|
+| 4.000000 |    11 |  82.6363636363636364 |
+| 6.000000 |     7 | 122.2857142857142857 |
+| 8.000000 |    14 | 209.2142857142857143 |
+
+
+* Summary
+
+Going through this exercise I've learned the built in ~file_fdw~ of
+postgres allows one to get up and running very quickly with any
+dataset that is supported by ~COPY~ or a command line tool that can
+produce such a dataset, as ReadStat does.
+
+For further work, I'd like to investigate the performance of this
+file_fdw on a much larger dataset. I suspect that performance will
+degrade on large datasets since they must be loaded entirely into
+memory before postgres may operate on them. Ideally, things like
+~LIMIT~ and ~WHERE~ filters could be pushed down to the ReadStat
+level, which I don't think is possible in the implementation here.
