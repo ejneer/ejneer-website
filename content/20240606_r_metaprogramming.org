@@ -1,0 +1,459 @@
+#+title: R Metaprogramming - Misc Patterns
+#+author: Eric Neer
+#+date: 2024-06-09
+#+tags: R rlang metaprogramming
+#+doctype: post
+#+property: header-args :exports both :eval never-export :mkdirp t 
+#+property: header-args:R :dir /docker:r_meta:/home/ :session *R-r_meta* :results output
+
+* R Metaprogramming - Misc Patterns
+
+This is a miscellaneous collection of metaprogramming examples I've used in
+production code.
+
+** Set up a docker container to run R code in 
+
+#+begin_src dockerfile :tangle 20240606_r_metaprogramming_misc_patterns/Dockerfile
+  FROM rocker/rstudio:latest
+  # rocker/tidyverse didn't seem to have a prebuilt arm64 image, so
+  # we can build our own
+  RUN Rscript -e "install.packages(c('rlang', 'tidyverse', 'lobstr'))"
+#+end_src
+
+#+begin_src shell :dir (concat default-directory "20240606_r_metaprongramming_misc_patterns/")
+  docker build . -t r_meta:latest
+#+end_src
+
+#+begin_src shell :dir ~/
+  docker run --rm --name r_meta -dti r_meta
+#+end_src
+
+#+RESULTS:
+: bba8f0404662ee369f8b4cce781a8c797016922e1a16e6eed826641840962ca4
+
+** Preliminaries
+
+~rlang~ provides a nice wrapper over base R's metaprogramming capabilities and
+extends it with a few useful facilities.
+
+#+begin_src R :results none
+  library(rlang)
+#+end_src
+
+*** Expressions and expression lists
+
+R code (aka ~language~ objects) can be created, inspected, and modified much the
+same as any other object in R. To prevent code from being evaluated, it must be
+"quoted" which base R accomplishes with the ~quote~ function. rlang accomplishes
+this with the ~expr~ function, short for "expression".
+
+#+begin_src R
+  (two_expr <- expr(1 + 1))
+  class(two_expr)
+  is.language(two_expr)
+#+end_src
+
+#+RESULTS:
+: 1 + 1
+: [1] "call"
+: [1] TRUE
+
+Expression lists are unsurprisingly lists of expressions, easily made by ~exprs~.
+
+#+begin_src R
+  exprs(
+    x + 5,
+    unevaluated_call(y),
+    z
+  )
+#+end_src
+
+#+RESULTS:
+: [[1]]
+: x + 5
+: 
+: [[2]]
+: unevaluated_call(y)
+: 
+: [[3]]
+: z
+
+*** Partial evaluation
+
+Code evaluation need not be all or nothing, however. Sometimes it is useful to
+only partially evaluate an expression, which in R is usually referred to as
+"quasiquotation", sometimes "backquote". In base R, this is accomplished with
+the ~bquote~ function, which will accept part of an expression wrapped in ~.()~
+to force evaluation.
+
+#+begin_src R
+  numerator <- 5
+  bquote(.(numerator) / denominator)
+#+end_src
+
+#+RESULTS:
+: 5/denominator
+
+rlang uses the "bang-bang" operator ~!!~
+
+#+begin_src R
+  expr(!!numerator / denominator)
+#+end_src
+
+#+RESULTS:
+: 5/denominator
+
+*** List splicing
+
+List splicing can be thought of as unpacking a list inside another list (or
+something like it), . Two of the most common use cases are:
+
++ splicing in function arguments from a list (sometimes used with ~rlang::exec~
+  if the function doesn't support tidy dots)
+
+** Patterns / Examples
+*** ~filter~ Expressions
+Sometimes it may be useful to store filters in a variable such that they may be
+reused or be set as the result of some computation or argument to a
+function. For functions that support "tidy dots", expression lists may be
+"spliced" in to the function call, essentially unpacking the list (powered by
+~rlang::list2~). This is useful in applying multiple filter conditions.
+
+  #+begin_src R
+    my_filters <- exprs(
+      cyl == 6,
+      mpg >= 20
+    )
+
+    # filter supports tidy dots
+    dplyr::filter(mtcars, !!!my_filters) |> knitr::kable()
+  #+end_src
+
+  #+RESULTS:
+  : 
+  : 
+  : |               |  mpg| cyl| disp|  hp| drat|    wt|  qsec| vs| am| gear| carb|
+  : |:--------------|----:|---:|----:|---:|----:|-----:|-----:|--:|--:|----:|----:|
+  : |Mazda RX4      | 21.0|   6|  160| 110| 3.90| 2.620| 16.46|  0|  1|    4|    4|
+  : |Mazda RX4 Wag  | 21.0|   6|  160| 110| 3.90| 2.875| 17.02|  0|  1|    4|    4|
+  : |Hornet 4 Drive | 21.4|   6|  258| 110| 3.08| 3.215| 19.44|  1|  0|    3|    1|
+  
+*** Creating/Modifying Variables in a ~mutate~
+
+Very similarly to filtering expressions, mutations can be encoded in expressions
+with one added complication. Often when using ~mutate~, we want to name the
+result of a computation (i.e. we give the new column a name). If we know the
+resulting name, this is fairly straightforward:
+
+#+begin_src R
+  times_two <- function(x) {
+    x * 2
+  }
+
+  mutations <- exprs(
+    mpg = times_two(mpg),
+    hp = times_two(mpg)
+  )
+
+  dplyr::transmute(head(mtcars), !!!mutations) |> knitr::kable()
+#+end_src
+
+#+RESULTS:
+#+begin_example
+
+
+|                  |  mpg|   hp|
+|:-----------------|----:|----:|
+|Mazda RX4         | 42.0| 84.0|
+|Mazda RX4 Wag     | 42.0| 84.0|
+|Datsun 710        | 45.6| 91.2|
+|Hornet 4 Drive    | 42.8| 85.6|
+|Hornet Sportabout | 37.4| 74.8|
+|Valiant           | 36.2| 72.4|
+#+end_example
+
+We run in to issues, however, if we don't know the resulting name (i.e. we want
+the name of the column to also be a variable):
+
+#+begin_src R
+  times_two_expression <- function(var) {
+    exprs(!!var = times_two(!!var))
+  }
+
+  times_two_expression(cyl)
+#+end_src
+
+#+RESULTS:
+: Error: unexpected '=' in:
+: "times_two_expression <- function(var) {
+:   exprs(!!var ="
+: Error: unexpected '}' in "}"
+: Error: object 'cyl' not found
+
+As the errors say, we can't have a variable on the left hand side of an
+assignment. Additionally, since the name ~cyl~ doesn't exist outside of
+~mtcars~, an error is thrown when trying to use it. To address these, we can use
+the fact that the walrus operator ~:=~ allows variables on the LHS of an
+assignment. However, it only allows strings on the LHS. So this will work:
+
+#+begin_src R
+  times_two_expression <- function(var) {
+    exprs(!!var := times_two(!!sym(var)))
+  }
+
+  times_two_expression("cyl")
+
+  dplyr::transmute(head(mtcars), !!!times_two_expression("cyl"))  |> knitr::kable()
+#+end_src
+
+#+RESULTS:
+#+begin_example
+$cyl
+times_two(cyl)
+
+
+|                  | cyl|
+|:-----------------|---:|
+|Mazda RX4         |  12|
+|Mazda RX4 Wag     |  12|
+|Datsun 710        |   8|
+|Hornet 4 Drive    |  12|
+|Hornet Sportabout |  16|
+|Valiant           |  12|
+#+end_example
+
+This only works if we expect a string argument for ~var~. Alternatively, we
+could expect symbols as arguments and adjust appropriately:
+
+#+begin_src R
+  times_two_expression <- function(var) {
+    exprs(!!as_name(var) := times_two(!!var))
+  }
+
+  times_two_expression(expr(cyl))
+
+  dplyr::transmute(head(mtcars), !!!times_two_expression(expr(cyl))) |> knitr::kable()
+#+end_src
+
+#+RESULTS:
+#+begin_example
+$cyl
+times_two(cyl)
+
+
+|                  | cyl|
+|:-----------------|---:|
+|Mazda RX4         |  12|
+|Mazda RX4 Wag     |  12|
+|Datsun 710        |   8|
+|Hornet 4 Drive    |  12|
+|Hornet Sportabout |  16|
+|Valiant           |  12|
+#+end_example
+
+I prefer to use a ~exprs~ list that uses symbols inside expressions and set the
+list names (as strings) to handle the naming. This avoids having to worry about
+strings inside our expressions:
+
+#+begin_src R
+  columns_to_double <- exprs(cyl, mpg, hp)
+
+  times_two_expression <- function(var) {
+    ## using expr now (i.e. this doesn't return a list, but an
+    ## expression now)
+    expr(times_two(!!var))
+  }
+
+  (my_exprs <- set_names(
+    ## list of expressions
+    purrr::map(columns_to_double, times_two_expression),
+    ## character vector of names
+    purrr::map_chr(columns_to_double, as_name)
+  ))
+
+  dplyr::transmute(head(mtcars), !!!my_exprs) |> knitr::kable()
+#+end_src
+
+#+RESULTS:
+#+begin_example
+$cyl
+times_two(cyl)
+
+$mpg
+times_two(mpg)
+
+$hp
+times_two(hp)
+
+
+|                  | cyl|  mpg|  hp|
+|:-----------------|---:|----:|---:|
+|Mazda RX4         |  12| 42.0| 220|
+|Mazda RX4 Wag     |  12| 42.0| 220|
+|Datsun 710        |   8| 45.6| 186|
+|Hornet 4 Drive    |  12| 42.8| 220|
+|Hornet Sportabout |  16| 37.4| 350|
+|Valiant           |  12| 36.2| 210|
+#+end_example
+
+*** Chaining Expressions with a Pipe
+
+Usually when working with lists of expressions, we need to combine them
+somehow. A pattern I've often used is to build up a list of expressions that
+form the steps in a pipeline. To turn the list into one expression I put all
+elements together with a pipe, which is easy enough with ~purrr::reduce~.
+
+#+begin_src R :results output
+  pipe_together <- function(x, y) {
+    expr(!!x %>% !!y)
+  }
+
+  purrr::reduce(
+    exprs(
+      mtcars,
+      dplyr::filter(!!!my_filters),
+      dplyr::transmute(!!!my_exprs)
+    ),
+    pipe_together
+  )
+#+end_src
+
+#+RESULTS:
+: mtcars %>% dplyr::filter(cyl == 6, mpg >= 20) %>% dplyr::transmute(cyl = times_two(cyl), 
+:     mpg = times_two(mpg), hp = times_two(hp))
+
+*** Dynamic modification of functions
+
+I once had a project that was essentially a data pipeline with many steps that
+needed to run in a specific order due to dependencies between steps (i.e. it had
+to solve a DAG). The python Hamilton library encodes DAGs by having functions
+whose arguments were named the same as a function whose result should be used in
+place of that argument. With function and argument names defining the DAG, some
+introspection of functions allowed one to build the DAG out. That introspection
+is straightforward with R.
+
+Here's some functions that use function and argument names to define the DAG as
+described above.
+
+#+begin_src R :results none
+  mtcars_data <- function(cyls) mtcars[mtcars$cyl %in% cyls, ]
+
+  horsepower <- function(mtcars_data) mtcars_data$hp
+
+  weight <- function(mtcars_data) mtcars_data$wt
+
+  power_to_weight <- function(horsepower, weight) horsepower / weight
+#+end_src
+
+To actually solve the connections between functions, we can recurse through
+functions and their arguments, putting calls to those functions in a new child
+environment and returning that child environment.
+
+#+begin_src R :results none
+  solve_dataflow <- function(fun_name, envir = rlang::caller_env()) {
+    ## setup a child environment in which we can define how to call
+    ## functions (with the parent env defining those functions)
+    env_plan <- new_environment(parent = envir)
+
+    ## we need to be able to tell if a given name corresponds to a
+    ## function we know about
+    is_function <- function(name) {
+      name %in% lsf.str(envir)
+    }
+
+    ## get previously defined function names from our environment to be used as
+    ## argument to dependent functions
+    formals_from_plan <- function(formals_names) {
+      if (!is.null(formals_names)) {
+        env_get_list(env_plan, formals_names)
+      } else {
+        list()
+      }
+    }
+
+    ## we need to recurse (starting from function `fun_name`) down all the
+    ## function arguments, replacing argument names with calls to corresponding
+    ## functions (if so defined)
+    recur <- function(sym_name) {
+      if (is_function(sym_name)) {
+        formals_names <- fn_fmls_names(as_function(sym_name, envir))
+
+        # arguments to this function that aren't in the planning environment
+        unresolved <- setdiff(formals_names, env_names(env_plan))
+
+        # make sure all arguments are resolved to a call or symbol
+        purrr::walk(unresolved, recur)
+
+        ## "install" in the env_plan environment a name whose value is how to call
+        ## the function corresponding to that name
+        env_bind(
+          env_plan,
+          !!sym_name := call2(sym_name, !!!formals_from_plan(formals_names))
+        )
+      } else {
+        # its just a symbol
+        env_bind(env_plan, !!sym_name := sym(sym_name))
+      }
+    }
+    recur(fun_name)
+
+    ## return the new environment
+    env_plan
+  }
+#+end_src
+
+"Solving" the DAG makes the connections between functions and arguments. Note
+how function names have been replace by calls to those functions, and its
+arguments replaced with calls to calculate that function argument.
+
+#+begin_src R
+  execution_plan <- solve_dataflow("power_to_weight")
+  lobstr::tree(execution_plan)
+#+end_src
+
+#+RESULTS:
+: <environment: 0xaaab03b3ef40>
+: ├─weight: <language> weight(mtcars_data = mtcars_data(cyls = cyls))
+: ├─power_to_weight: <language> power_to_weight(horsepower = horsepower(mtcars_data = mtcars_data(cyls = cyls)), power_to_weight: <language>     weight = weight(mtcars_data = mtcars_data(cyls = cyls)))
+: ├─cyls: <symbol> cyls
+: ├─horsepower: <language> horsepower(mtcars_data = mtcars_data(cyls = cyls))
+: └─mtcars_data: <language> mtcars_data(cyls = cyls)
+
+Viewing the AST of function calls demonstrates the order in which function calls
+will happen (with █ indicating a function call).
+
+#+begin_src R
+  lobstr::ast(!!execution_plan$power_to_weight)
+#+end_src
+
+#+RESULTS:
+: █─power_to_weight 
+: ├─horsepower = █─horsepower 
+: │              └─mtcars_data = █─mtcars_data 
+: │                              └─cyls = cyls 
+: └─weight = █─weight 
+:            └─mtcars_data = █─mtcars_data 
+:                            └─cyls = cyls
+
+Note that since none of these functions are defined in the ~execution_plan~
+environment, their actual implementations will be looked up in the parent of
+~execution_plan~.
+
+~eval~ing the tree of calls enables a final calculation, defining any symbols
+that aren't function calls (e.g. ~cyls~ here).
+
+#+begin_src R
+  eval(execution_plan$power_to_weight, list(cyls = 4))
+#+end_src
+
+#+RESULTS:
+:  [1] 40.08621 19.43574 30.15873 30.00000 32.19814 35.42234 39.35091 34.10853 42.52336 74.68605 39.20863
+  
+** Shut down docker container
+
+#+begin_src shell :dir ~/
+  docker stop r_meta
+#+end_src
+
+#+RESULTS:
+: r_meta

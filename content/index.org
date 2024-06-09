@@ -66,3 +66,16 @@ and writing in public.
      ,posts)))
   #+end_src
 
+  #+RESULTS:
+  #+begin_export html
+  <table class="post-table"> <colgroup> <col span="1" style="width: 15%"></col> <col span="1" style="width: 50%"></col></colgroup><tbody> <tr> <td>2024-06-09</td> <td> <a href="20240606_r_metaprogramming.html">R Metaprogramming - Misc Patterns</a></td> <td><div><a href="/tag_index.html#R" class="tag-link">R</a> <a href="/tag_index.html#rlang" class="tag-link">rlang</a> <a href="/tag_index.html#metaprogramming" class="tag-link">metaprogramming</a></div></td></tr></tbody>
+  <tbody> <tr> <td>2024-06-02</td> <td> <a href="20240602_postgres_fdw_readstat.html">Postgres FDW for ReadStat / SAS</a></td> <td><div><a href="/tag_index.html#postgres" class="tag-link">postgres</a> <a href="/tag_index.html#readstat" class="tag-link">readstat</a> <a href="/tag_index.html#docker" class="tag-link">docker</a></div></td></tr></tbody>
+  <tbody> <tr> <td>2023-05-16</td> <td> <a href="closure_networks_in_r.html">Closure Networks in R</a></td> <td><div><a href="/tag_index.html#R" class="tag-link">R</a> <a href="/tag_index.html#commonlisp" class="tag-link">commonlisp</a></div></td></tr></tbody>
+  <tbody> <tr> <td>2023-04-04</td> <td> <a href="converting_to_org_publish.html">Converting To Org Publish</a></td> <td><div><a href="/tag_index.html#emacs" class="tag-link">emacs</a> <a href="/tag_index.html#orgmode" class="tag-link">orgmode</a></div></td></tr></tbody>
+  <tbody> <tr> <td>2022-11-06</td> <td> <a href="trying_out_cpp11_babel.html">Trying out cpp11 and org-babel</a></td> <td><div><a href="/tag_index.html#orgmode" class="tag-link">orgmode</a> <a href="/tag_index.html#R" class="tag-link">R</a> <a href="/tag_index.html#C/C++" class="tag-link">C/C++</a></div></td></tr></tbody>
+  <tbody> <tr> <td>2022-07-13</td> <td> <a href="undirected-graph-traversal.html">Undirected Graph Traversal</a></td> <td><div><a href="/tag_index.html#commonlisp" class="tag-link">commonlisp</a> <a href="/tag_index.html#algorithms" class="tag-link">algorithms</a> <a href="/tag_index.html#graphs" class="tag-link">graphs</a></div></td></tr></tbody>
+  <tbody> <tr> <td>2020-07-25</td> <td> <a href="bills_of_material.html">Bills of Material</a></td> <td><div><a href="/tag_index.html#sql" class="tag-link">sql</a> <a href="/tag_index.html#graphs" class="tag-link">graphs</a> <a href="/tag_index.html#manufacturing" class="tag-link">manufacturing</a></div></td></tr></tbody>
+  <tbody> <tr> <td>2020-06-05</td> <td> <a href="quicksort.html">Quicksort</a></td> <td><div><a href="/tag_index.html#python" class="tag-link">python</a> <a href="/tag_index.html#algorithms" class="tag-link">algorithms</a></div></td></tr></tbody>
+  <tbody> <tr> <td>2020-05-24</td> <td> <a href="mergesort.html">Mergesort</a></td> <td><div><a href="/tag_index.html#python" class="tag-link">python</a> <a href="/tag_index.html#algorithms" class="tag-link">algorithms</a></div></td></tr></tbody></table>
+  #+end_export
+

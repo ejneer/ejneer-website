@@ -1,0 +1,558 @@
+<!DOCTYPE html><html lang="en"><head> <meta charset="utf-8" author="Eric Neer" name="viewport" content="width=device-width, initial-scale=1"></meta> <title>R Metaprogramming - Misc Patterns - Eric Neer</title> <link href="/static/styles.css" rel="stylesheet"></link> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"></link> <link href="/static/favicon.png" rel="icon" type="image/x-icon"></link> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body> <div><div class="sidebar"> <div class="header"> <a href="/"> <img src="/static/pic.jpeg" width="150" style="border-radius: 50%;"></img></a> <p class="lead">Data Scientist & Engineer</p> <p class="lead">Mercury Insurance</p> <br></br><div class="sidebar-nav-item"> <i class="fa-solid fa-id-card"></i> <a href="/cv.html">CV</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-github"></i> <a href="https://github.com/ejneer">GitHub</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-linkedin"></i> <a href="https://www.linkedin.com/in/eric-neer/">LinkedIn</a></div><div class="footer"> <p>Made with <a href="https://www.gnu.org/software/emacs/">Emacs</a> 29.1 (<a href="https://orgmode.org">Org</a> mode 9.7-pre)</p></div></div></div> <div class="content"><div id="outline-container-org38cc4df" class="outline-2">
+<h2 id="org38cc4df">R Metaprogramming - Misc Patterns</h2>
+<div class="outline-text-2" id="text-org38cc4df">
+<p>
+This is a miscellaneous collection of metaprogramming examples I've used in
+production code.
+</p>
+</div>
+<div id="outline-container-org3292231" class="outline-3">
+<h3 id="org3292231">Set up a docker container to run R code in</h3>
+<div class="outline-text-3" id="text-org3292231">
+<div class="org-src-container">
+<pre class="src src-dockerfile"><span style="color: #531ab6;">FROM</span> <span style="color: #005f5f; font-weight: bold;">rocker/rstudio:latest</span>
+<span style="color: #7f0000;"># </span><span style="color: #7f0000;">rocker/tidyverse didn't seem to have a prebuilt arm64 image, so</span>
+<span style="color: #7f0000;"># </span><span style="color: #7f0000;">we can build our own</span>
+<span style="color: #531ab6;">RUN</span> Rscript -e <span style="color: #3548cf;">"install.packages(c('rlang', 'tidyverse', 'lobstr'))"</span>
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-shell">docker build . -t r_meta:latest
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-shell">docker run --rm --name r_meta -dti r_meta
+</pre>
+</div>
+
+<pre class="example">
+bba8f0404662ee369f8b4cce781a8c797016922e1a16e6eed826641840962ca4
+</pre>
+</div>
+</div>
+<div id="outline-container-orga033035" class="outline-3">
+<h3 id="orga033035">Preliminaries</h3>
+<div class="outline-text-3" id="text-orga033035">
+<p>
+<code>rlang</code> provides a nice wrapper over base R's metaprogramming capabilities and
+extends it with a few useful facilities.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #0000b0;">library</span>(rlang)
+</pre>
+</div>
+</div>
+<div id="outline-container-org09fc430" class="outline-4">
+<h4 id="org09fc430">Expressions and expression lists</h4>
+<div class="outline-text-4" id="text-org09fc430">
+<p>
+R code (aka <code>language</code> objects) can be created, inspected, and modified much the
+same as any other object in R. To prevent code from being evaluated, it must be
+"quoted" which base R accomplishes with the <code>quote</code> function. rlang accomplishes
+this with the <code>expr</code> function, short for "expression".
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">(two_expr <span style="color: #0000b0;">&lt;-</span> expr(1 + 1))
+class(two_expr)
+is.language(two_expr)
+</pre>
+</div>
+
+<pre class="example">
+1 + 1
+[1] "call"
+[1] TRUE
+</pre>
+
+
+<p>
+Expression lists are unsurprisingly lists of expressions, easily made by <code>exprs</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">exprs(
+  x + 5,
+  unevaluated_call(y),
+  z
+)
+</pre>
+</div>
+
+<pre class="example">
+[[1]]
+x + 5
+
+[[2]]
+unevaluated_call(y)
+
+[[3]]
+z
+</pre>
+</div>
+</div>
+<div id="outline-container-org18f49d7" class="outline-4">
+<h4 id="org18f49d7">Partial evaluation</h4>
+<div class="outline-text-4" id="text-org18f49d7">
+<p>
+Code evaluation need not be all or nothing, however. Sometimes it is useful to
+only partially evaluate an expression, which in R is usually referred to as
+"quasiquotation", sometimes "backquote". In base R, this is accomplished with
+the <code>bquote</code> function, which will accept part of an expression wrapped in <code>.()</code>
+to force evaluation.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">numerator <span style="color: #0000b0;">&lt;-</span> 5
+bquote(.(numerator) / denominator)
+</pre>
+</div>
+
+<pre class="example">
+5/denominator
+</pre>
+
+
+<p>
+rlang uses the "bang-bang" operator <code>!!</code>
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">expr(!!numerator / denominator)
+</pre>
+</div>
+
+<pre class="example">
+5/denominator
+</pre>
+</div>
+</div>
+<div id="outline-container-org9362067" class="outline-4">
+<h4 id="org9362067">List splicing</h4>
+<div class="outline-text-4" id="text-org9362067">
+<p>
+List splicing can be thought of as unpacking a list inside another list (or
+something like it), . Two of the most common use cases are:
+</p>
+
+<ul class="org-ul">
+<li>splicing in function arguments from a list (sometimes used with <code>rlang::exec</code>
+if the function doesn't support tidy dots)</li>
+</ul>
+</div>
+</div>
+</div>
+<div id="outline-container-org5d04cdf" class="outline-3">
+<h3 id="org5d04cdf">Patterns / Examples</h3>
+<div class="outline-text-3" id="text-org5d04cdf">
+</div>
+<div id="outline-container-org09c0c4c" class="outline-4">
+<h4 id="org09c0c4c"><code>filter</code> Expressions</h4>
+<div class="outline-text-4" id="text-org09c0c4c">
+<p>
+Sometimes it may be useful to store filters in a variable such that they may be
+reused or be set as the result of some computation or argument to a
+function. For functions that support "tidy dots", expression lists may be
+"spliced" in to the function call, essentially unpacking the list (powered by
+<code>rlang::list2</code>). This is useful in applying multiple filter conditions.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">my_filters <span style="color: #0000b0;">&lt;-</span> exprs(
+  cyl == 6,
+  mpg &gt;= 20
+)
+
+<span style="color: #7f0000;"># </span><span style="color: #7f0000;">filter supports tidy dots</span>
+dplyr::filter(mtcars, !!!my_filters) |&gt; knitr::kable()
+</pre>
+</div>
+
+<pre class="example">
+
+
+|               |  mpg| cyl| disp|  hp| drat|    wt|  qsec| vs| am| gear| carb|
+|:--------------|----:|---:|----:|---:|----:|-----:|-----:|--:|--:|----:|----:|
+|Mazda RX4      | 21.0|   6|  160| 110| 3.90| 2.620| 16.46|  0|  1|    4|    4|
+|Mazda RX4 Wag  | 21.0|   6|  160| 110| 3.90| 2.875| 17.02|  0|  1|    4|    4|
+|Hornet 4 Drive | 21.4|   6|  258| 110| 3.08| 3.215| 19.44|  1|  0|    3|    1|
+</pre>
+</div>
+</div>
+<div id="outline-container-org05556bc" class="outline-4">
+<h4 id="org05556bc">Creating/Modifying Variables in a <code>mutate</code></h4>
+<div class="outline-text-4" id="text-org05556bc">
+<p>
+Very similarly to filtering expressions, mutations can be encoded in expressions
+with one added complication. Often when using <code>mutate</code>, we want to name the
+result of a computation (i.e. we give the new column a name). If we know the
+resulting name, this is fairly straightforward:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #721045;">times_two</span> <span style="color: #0000b0;">&lt;-</span> <span style="color: #531ab6;">function</span>(x) {
+  x * 2
+}
+
+mutations <span style="color: #0000b0;">&lt;-</span> exprs(
+  mpg = times_two(mpg),
+  hp = times_two(mpg)
+)
+
+dplyr::transmute(head(mtcars), !!!mutations) |&gt; knitr::kable()
+</pre>
+</div>
+
+<pre class="example" id="org514c6fa">
+
+
+|                  |  mpg|   hp|
+|:-----------------|----:|----:|
+|Mazda RX4         | 42.0| 84.0|
+|Mazda RX4 Wag     | 42.0| 84.0|
+|Datsun 710        | 45.6| 91.2|
+|Hornet 4 Drive    | 42.8| 85.6|
+|Hornet Sportabout | 37.4| 74.8|
+|Valiant           | 36.2| 72.4|
+</pre>
+
+<p>
+We run in to issues, however, if we don't know the resulting name (i.e. we want
+the name of the column to also be a variable):
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #721045;">times_two_expression</span> <span style="color: #0000b0;">&lt;-</span> <span style="color: #531ab6;">function</span>(var) {
+  exprs(!!var = times_two(!!var))
+}
+
+times_two_expression(cyl)
+</pre>
+</div>
+
+<pre class="example">
+Error: unexpected '=' in:
+"times_two_expression &lt;- function(var) {
+  exprs(!!var ="
+Error: unexpected '}' in "}"
+Error: object 'cyl' not found
+</pre>
+
+
+<p>
+As the errors say, we can't have a variable on the left hand side of an
+assignment. Additionally, since the name <code>cyl</code> doesn't exist outside of
+<code>mtcars</code>, an error is thrown when trying to use it. To address these, we can use
+the fact that the walrus operator <code>:=</code> allows variables on the LHS of an
+assignment. However, it only allows strings on the LHS. So this will work:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #721045;">times_two_expression</span> <span style="color: #0000b0;">&lt;-</span> <span style="color: #531ab6;">function</span>(var) {
+  exprs(!!var := times_two(!!sym(var)))
+}
+
+times_two_expression(<span style="color: #3548cf;">"cyl"</span>)
+
+dplyr::transmute(head(mtcars), !!!times_two_expression(<span style="color: #3548cf;">"cyl"</span>))  |&gt; knitr::kable()
+</pre>
+</div>
+
+<pre class="example" id="org55f369f">
+$cyl
+times_two(cyl)
+
+
+|                  | cyl|
+|:-----------------|---:|
+|Mazda RX4         |  12|
+|Mazda RX4 Wag     |  12|
+|Datsun 710        |   8|
+|Hornet 4 Drive    |  12|
+|Hornet Sportabout |  16|
+|Valiant           |  12|
+</pre>
+
+<p>
+This only works if we expect a string argument for <code>var</code>. Alternatively, we
+could expect symbols as arguments and adjust appropriately:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #721045;">times_two_expression</span> <span style="color: #0000b0;">&lt;-</span> <span style="color: #531ab6;">function</span>(var) {
+  exprs(!!as_name(var) := times_two(!!var))
+}
+
+times_two_expression(expr(cyl))
+
+dplyr::transmute(head(mtcars), !!!times_two_expression(expr(cyl))) |&gt; knitr::kable()
+</pre>
+</div>
+
+<pre class="example" id="orge41e2ab">
+$cyl
+times_two(cyl)
+
+
+|                  | cyl|
+|:-----------------|---:|
+|Mazda RX4         |  12|
+|Mazda RX4 Wag     |  12|
+|Datsun 710        |   8|
+|Hornet 4 Drive    |  12|
+|Hornet Sportabout |  16|
+|Valiant           |  12|
+</pre>
+
+<p>
+I prefer to use a <code>exprs</code> list that uses symbols inside expressions and set the
+list names (as strings) to handle the naming. This avoids having to worry about
+strings inside our expressions:
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">columns_to_double <span style="color: #0000b0;">&lt;-</span> exprs(cyl, mpg, hp)
+
+<span style="color: #721045;">times_two_expression</span> <span style="color: #0000b0;">&lt;-</span> <span style="color: #531ab6;">function</span>(var) {
+  <span style="color: #7f0000;">## </span><span style="color: #7f0000;">using expr now (i.e. this doesn't return a list, but an</span>
+  <span style="color: #7f0000;">## </span><span style="color: #7f0000;">expression now)</span>
+  expr(times_two(!!var))
+}
+
+(my_exprs <span style="color: #0000b0;">&lt;-</span> set_names(
+  <span style="color: #7f0000;">## </span><span style="color: #7f0000;">list of expressions</span>
+  purrr::map(columns_to_double, times_two_expression),
+  <span style="color: #7f0000;">## </span><span style="color: #7f0000;">character vector of names</span>
+  purrr::map_chr(columns_to_double, as_name)
+))
+
+dplyr::transmute(head(mtcars), !!!my_exprs) |&gt; knitr::kable()
+</pre>
+</div>
+
+<pre class="example" id="org9596988">
+$cyl
+times_two(cyl)
+
+$mpg
+times_two(mpg)
+
+$hp
+times_two(hp)
+
+
+|                  | cyl|  mpg|  hp|
+|:-----------------|---:|----:|---:|
+|Mazda RX4         |  12| 42.0| 220|
+|Mazda RX4 Wag     |  12| 42.0| 220|
+|Datsun 710        |   8| 45.6| 186|
+|Hornet 4 Drive    |  12| 42.8| 220|
+|Hornet Sportabout |  16| 37.4| 350|
+|Valiant           |  12| 36.2| 210|
+</pre>
+</div>
+</div>
+<div id="outline-container-org9b815cb" class="outline-4">
+<h4 id="org9b815cb">Chaining Expressions with a Pipe</h4>
+<div class="outline-text-4" id="text-org9b815cb">
+<p>
+Usually when working with lists of expressions, we need to combine them
+somehow. A pattern I've often used is to build up a list of expressions that
+form the steps in a pipeline. To turn the list into one expression I put all
+elements together with a pipe, which is easy enough with <code>purrr::reduce</code>.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #721045;">pipe_together</span> <span style="color: #0000b0;">&lt;-</span> <span style="color: #531ab6;">function</span>(x, y) {
+  expr(!!x <span style="color: #0000b0;">%&gt;%</span> !!y)
+}
+
+purrr::reduce(
+  exprs(
+    mtcars,
+    dplyr::filter(!!!my_filters),
+    dplyr::transmute(!!!my_exprs)
+  ),
+  pipe_together
+)
+</pre>
+</div>
+
+<pre class="example">
+mtcars %&gt;% dplyr::filter(cyl == 6, mpg &gt;= 20) %&gt;% dplyr::transmute(cyl = times_two(cyl), 
+    mpg = times_two(mpg), hp = times_two(hp))
+</pre>
+</div>
+</div>
+<div id="outline-container-org5695383" class="outline-4">
+<h4 id="org5695383">Dynamic modification of functions</h4>
+<div class="outline-text-4" id="text-org5695383">
+<p>
+I once had a project that was essentially a data pipeline with many steps that
+needed to run in a specific order due to dependencies between steps (i.e. it had
+to solve a DAG). The python Hamilton library encodes DAGs by having functions
+whose arguments were named the same as a function whose result should be used in
+place of that argument. With function and argument names defining the DAG, some
+introspection of functions allowed one to build the DAG out. That introspection
+is straightforward with R.
+</p>
+
+<p>
+Here's some functions that use function and argument names to define the DAG as
+described above.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #721045;">mtcars_data</span> <span style="color: #0000b0;">&lt;-</span> <span style="color: #531ab6;">function</span>(cyls) mtcars[mtcars$cyl <span style="color: #0000b0;">%in%</span> cyls, ]
+
+<span style="color: #721045;">horsepower</span> <span style="color: #0000b0;">&lt;-</span> <span style="color: #531ab6;">function</span>(mtcars_data) mtcars_data$hp
+
+<span style="color: #721045;">weight</span> <span style="color: #0000b0;">&lt;-</span> <span style="color: #531ab6;">function</span>(mtcars_data) mtcars_data$wt
+
+<span style="color: #721045;">power_to_weight</span> <span style="color: #0000b0;">&lt;-</span> <span style="color: #531ab6;">function</span>(horsepower, weight) horsepower / weight
+</pre>
+</div>
+
+<p>
+To actually solve the connections between functions, we can recurse through
+functions and their arguments, putting calls to those functions in a new child
+environment and returning that child environment.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R"><span style="color: #721045;">solve_dataflow</span> <span style="color: #0000b0;">&lt;-</span> <span style="color: #531ab6;">function</span>(fun_name, envir = rlang::caller_env()) {
+  <span style="color: #7f0000;">## </span><span style="color: #7f0000;">setup a child environment in which we can define how to call</span>
+  <span style="color: #7f0000;">## </span><span style="color: #7f0000;">functions (with the parent env defining those functions)</span>
+  env_plan <span style="color: #0000b0;">&lt;-</span> new_environment(parent = envir)
+
+  <span style="color: #7f0000;">## </span><span style="color: #7f0000;">we need to be able to tell if a given name corresponds to a</span>
+  <span style="color: #7f0000;">## </span><span style="color: #7f0000;">function we know about</span>
+  <span style="color: #721045;">is_function</span> <span style="color: #0000b0;">&lt;-</span> <span style="color: #531ab6;">function</span>(name) {
+    name <span style="color: #0000b0;">%in%</span> lsf.str(envir)
+  }
+
+  <span style="color: #7f0000;">## </span><span style="color: #7f0000;">get previously defined function names from our environment to be used as</span>
+  <span style="color: #7f0000;">## </span><span style="color: #7f0000;">argument to dependent functions</span>
+  <span style="color: #721045;">formals_from_plan</span> <span style="color: #0000b0;">&lt;-</span> <span style="color: #531ab6;">function</span>(formals_names) {
+    <span style="color: #531ab6;">if</span> (!is.null(formals_names)) {
+      env_get_list(env_plan, formals_names)
+    } <span style="color: #531ab6;">else</span> {
+      list()
+    }
+  }
+
+  <span style="color: #7f0000;">## </span><span style="color: #7f0000;">we need to recurse (starting from function `fun_name`) down all the</span>
+  <span style="color: #7f0000;">## </span><span style="color: #7f0000;">function arguments, replacing argument names with calls to corresponding</span>
+  <span style="color: #7f0000;">## </span><span style="color: #7f0000;">functions (if so defined)</span>
+  <span style="color: #721045;">recur</span> <span style="color: #0000b0;">&lt;-</span> <span style="color: #531ab6;">function</span>(sym_name) {
+    <span style="color: #531ab6;">if</span> (is_function(sym_name)) {
+      formals_names <span style="color: #0000b0;">&lt;-</span> fn_fmls_names(as_function(sym_name, envir))
+
+      <span style="color: #7f0000;"># </span><span style="color: #7f0000;">arguments to this function that aren't in the planning environment</span>
+      unresolved <span style="color: #0000b0;">&lt;-</span> setdiff(formals_names, env_names(env_plan))
+
+      <span style="color: #7f0000;"># </span><span style="color: #7f0000;">make sure all arguments are resolved to a call or symbol</span>
+      purrr::walk(unresolved, recur)
+
+      <span style="color: #7f0000;">## </span><span style="color: #7f0000;">"install" in the env_plan environment a name whose value is how to call</span>
+      <span style="color: #7f0000;">## </span><span style="color: #7f0000;">the function corresponding to that name</span>
+      env_bind(
+        env_plan,
+        !!sym_name := call2(sym_name, !!!formals_from_plan(formals_names))
+      )
+    } <span style="color: #531ab6;">else</span> {
+      <span style="color: #7f0000;"># </span><span style="color: #7f0000;">its just a symbol</span>
+      env_bind(env_plan, !!sym_name := sym(sym_name))
+    }
+  }
+  recur(fun_name)
+
+  <span style="color: #7f0000;">## </span><span style="color: #7f0000;">return the new environment</span>
+  env_plan
+}
+</pre>
+</div>
+
+<p>
+"Solving" the DAG makes the connections between functions and arguments. Note
+how function names have been replace by calls to those functions, and its
+arguments replaced with calls to calculate that function argument.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">execution_plan <span style="color: #0000b0;">&lt;-</span> solve_dataflow(<span style="color: #3548cf;">"power_to_weight"</span>)
+lobstr::tree(execution_plan)
+</pre>
+</div>
+
+<pre class="example">
+&lt;environment: 0xaaab03b3ef40&gt;
+├─weight: &lt;language&gt; weight(mtcars_data = mtcars_data(cyls = cyls))
+├─power_to_weight: &lt;language&gt; power_to_weight(horsepower = horsepower(mtcars_data = mtcars_data(cyls = cyls)), power_to_weight: &lt;language&gt;     weight = weight(mtcars_data = mtcars_data(cyls = cyls)))
+├─cyls: &lt;symbol&gt; cyls
+├─horsepower: &lt;language&gt; horsepower(mtcars_data = mtcars_data(cyls = cyls))
+└─mtcars_data: &lt;language&gt; mtcars_data(cyls = cyls)
+</pre>
+
+
+<p>
+Viewing the AST of function calls demonstrates the order in which function calls
+will happen (with █ indicating a function call).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">lobstr::ast(!!execution_plan$power_to_weight)
+</pre>
+</div>
+
+<pre class="example">
+█─power_to_weight 
+├─horsepower = █─horsepower 
+│              └─mtcars_data = █─mtcars_data 
+│                              └─cyls = cyls 
+└─weight = █─weight 
+           └─mtcars_data = █─mtcars_data 
+                           └─cyls = cyls
+</pre>
+
+
+<p>
+Note that since none of these functions are defined in the <code>execution_plan</code>
+environment, their actual implementations will be looked up in the parent of
+<code>execution_plan</code>.
+</p>
+
+<p>
+<code>eval~ing the tree of calls enables a final calculation, defining any symbols
+that aren't function calls (e.g. ~cyls</code> here).
+</p>
+
+<div class="org-src-container">
+<pre class="src src-R">eval(execution_plan$power_to_weight, list(cyls = 4))
+</pre>
+</div>
+
+<pre class="example">
+[1] 40.08621 19.43574 30.15873 30.00000 32.19814 35.42234 39.35091 34.10853 42.52336 74.68605 39.20863
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orga4507ab" class="outline-3">
+<h3 id="orga4507ab">Shut down docker container</h3>
+<div class="outline-text-3" id="text-orga4507ab">
+<div class="org-src-container">
+<pre class="src src-shell">docker stop r_meta
+</pre>
+</div>
+
+<pre class="example">
+r_meta
+</pre>
+</div>
+</div>
+</div>
+</div></div></body></html>
