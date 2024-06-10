@@ -103,14 +103,6 @@ rlang uses the "bang-bang" operator ~!!~
 #+RESULTS:
 : 5/denominator
 
-*** List splicing
-
-List splicing can be thought of as unpacking a list inside another list (or
-something like it), . Two of the most common use cases are:
-
-+ splicing in function arguments from a list (sometimes used with ~rlang::exec~
-  if the function doesn't support tidy dots)
-
 ** Patterns / Examples
 *** ~filter~ Expressions
 Sometimes it may be useful to store filters in a variable such that they may be
@@ -439,8 +431,8 @@ Note that since none of these functions are defined in the ~execution_plan~
 environment, their actual implementations will be looked up in the parent of
 ~execution_plan~.
 
-~eval~ing the tree of calls enables a final calculation, defining any symbols
-that aren't function calls (e.g. ~cyls~ here).
+~eval~ ing the tree of calls enables a final calculation, defining any
+symbols that aren't function calls (e.g. ~cyls~ here).
 
 #+begin_src R
   eval(execution_plan$power_to_weight, list(cyls = 4))

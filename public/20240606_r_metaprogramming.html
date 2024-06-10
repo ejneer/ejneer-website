@@ -130,20 +130,6 @@ rlang uses the "bang-bang" operator <code>!!</code>
 </pre>
 </div>
 </div>
-<div id="outline-container-org9362067" class="outline-4">
-<h4 id="org9362067">List splicing</h4>
-<div class="outline-text-4" id="text-org9362067">
-<p>
-List splicing can be thought of as unpacking a list inside another list (or
-something like it), . Two of the most common use cases are:
-</p>
-
-<ul class="org-ul">
-<li>splicing in function arguments from a list (sometimes used with <code>rlang::exec</code>
-if the function doesn't support tidy dots)</li>
-</ul>
-</div>
-</div>
 </div>
 <div id="outline-container-org5d04cdf" class="outline-3">
 <h3 id="org5d04cdf">Patterns / Examples</h3>
@@ -206,7 +192,7 @@ dplyr::transmute(head(mtcars), !!!mutations) |&gt; knitr::kable()
 </pre>
 </div>
 
-<pre class="example" id="org514c6fa">
+<pre class="example" id="org9596988">
 
 
 |                  |  mpg|   hp|
@@ -261,7 +247,7 @@ dplyr::transmute(head(mtcars), !!!times_two_expression(<span style="color: #3548
 </pre>
 </div>
 
-<pre class="example" id="org55f369f">
+<pre class="example" id="org959631c">
 $cyl
 times_two(cyl)
 
@@ -292,7 +278,7 @@ dplyr::transmute(head(mtcars), !!!times_two_expression(expr(cyl))) |&gt; knitr::
 </pre>
 </div>
 
-<pre class="example" id="orge41e2ab">
+<pre class="example" id="org07db1fe">
 $cyl
 times_two(cyl)
 
@@ -333,7 +319,7 @@ dplyr::transmute(head(mtcars), !!!my_exprs) |&gt; knitr::kable()
 </pre>
 </div>
 
-<pre class="example" id="org9596988">
+<pre class="example" id="org30b44b6">
 $cyl
 times_two(cyl)
 
@@ -526,8 +512,8 @@ environment, their actual implementations will be looked up in the parent of
 </p>
 
 <p>
-<code>eval~ing the tree of calls enables a final calculation, defining any symbols
-that aren't function calls (e.g. ~cyls</code> here).
+<code>eval</code> ing the tree of calls enables a final calculation, defining any
+symbols that aren't function calls (e.g. <code>cyls</code> here).
 </p>
 
 <div class="org-src-container">
