@@ -1,0 +1,308 @@
+<!DOCTYPE html><html lang="en"><head> <meta charset="utf-8" author="Eric Neer" name="viewport" content="width=device-width, initial-scale=1"></meta> <title>Row-wise Callbacks for ReadStat using Coroutines - Eric Neer</title> <link href="/static/styles.css" rel="stylesheet"></link> <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.3.0/css/all.min.css" rel="stylesheet"></link> <link href="/static/favicon.png" rel="icon" type="image/x-icon"></link> <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script> <script id="MathJax-script" async="" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script></head><body> <div><div class="sidebar"> <div class="header"> <a href="/"> <img src="/static/pic.jpeg" width="150" style="border-radius: 50%;"></img></a> <p class="lead">Data Scientist & Engineer</p> <p class="lead">Mercury Insurance</p> <br></br><div class="sidebar-nav-item"> <i class="fa-solid fa-id-card"></i> <a href="/cv.html">CV</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-github"></i> <a href="https://github.com/ejneer">GitHub</a></div><div class="sidebar-nav-item"> <i class="fa-brands fa-linkedin"></i> <a href="https://www.linkedin.com/in/eric-neer/">LinkedIn</a></div><div class="footer"> <p>Made with <a href="https://www.gnu.org/software/emacs/">Emacs</a> 29.1 (<a href="https://orgmode.org">Org</a> mode 9.7-pre)</p></div></div></div> <div class="content"><div id="outline-container-org7b4e40a" class="outline-2">
+<h2 id="org7b4e40a">Row-wise Callbacks for ReadStat using Coroutines</h2>
+<div class="outline-text-2" id="text-org7b4e40a">
+<p>
+My <a href="20240602_postgres_fdw_readstat.html">last post</a> involving <a href="https://github.com/WizardMac/ReadStat">ReadStat</a> was about how I'd like to set up a Postgres FDW
+for SAS data using ReadStat to parse the data files. Part of achieving a
+solution that doesn't require converting to CSV on the fly would require having
+a callback that executes after a row has been read. Namely, this would be for
+the <a href="https://www.postgresql.org/docs/current/fdw-callbacks.html"><code>IterateForeignScan</code></a> callback of a postgres FDW which fills up and returns a
+<code>TupleTableSlot</code> (i.e. a row of data). ReadStat has a callback api at the
+individual values which also can know which column is being read (in other
+words, we can know if we're reading the last column in a row) through the use of
+a context object.
+</p>
+
+<p>
+What I would like to do is be able to hand control back to the postgres FDW
+after the row has been read for it to do its thing, then pass control back to
+ReadStat to continue reading data. This requires a row callback functionality on
+the ReadStat side, as well as the ability to track FDW state and ReadStat
+state. From my various searches, <a href="https://www.chiark.greenend.org.uk/~sgtatham/quasiblog/coroutines-philosophy/">coroutines</a> seems like they may meet my needs as
+they may "suspend" and "resume" execution in different parts of running
+code. <a href="https://github.com/edubart/minicoro">minicoro</a>, being a coroutine library implemented in a single header file,
+appeared to be easiest to get started with. The goal of this post is to
+essentially have a row callback api that can execute an arbitrary function after
+reading a row.
+</p>
+</div>
+<div id="outline-container-org0121722" class="outline-3">
+<h3 id="org0121722">Docker container setup</h3>
+<div class="outline-text-3" id="text-org0121722">
+<p>
+Set up a docker container to work in. This is essentially the same as my prior
+postgres post.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-dockerfile"><span style="color: #531ab6;">FROM</span> <span style="color: #005f5f; font-weight: bold;">debian:latest</span>
+<span style="color: #531ab6;">RUN</span> apt-get update &amp;&amp; <span style="color: #3548cf;">\</span>
+    apt-get -y install gcc gdb clangd make git autotools-dev libtool gettext &amp;&amp; <span style="color: #3548cf;">\</span>
+    git clone https://github.com/WizardMac/ReadStat.git /home/ReadStat &amp;&amp; <span style="color: #3548cf;">\</span>
+    git clone https://github.com/edubart/minicoro.git /home/minicoro
+
+<span style="color: #7f0000;"># </span><span style="color: #7f0000;">setup and install ReadStat</span>
+<span style="color: #531ab6;">WORKDIR</span> /home/ReadStat
+<span style="color: #531ab6;">RUN</span> git checkout v1.1.9
+<span style="color: #531ab6;">RUN</span> ./autogen.sh &amp;&amp; ./configure --prefix /usr/local
+<span style="color: #531ab6;">RUN</span> make &amp;&amp; make install
+<span style="color: #531ab6;">RUN</span> echo <span style="color: #3548cf;">"/usr/local/lib/"</span> &gt;&gt; /etc/ld.so.conf 
+<span style="color: #531ab6;">RUN</span> ldconfig
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-shell">docker build . -t readstat_rowwise:latest
+</pre>
+</div>
+
+<div class="org-src-container">
+<pre class="src src-shell">docker container run --rm --name readstat_rowwise -dti -v ${<span style="color: #005e8b;">PWD</span>}:/home/src/ readstat_rowwise 
+</pre>
+</div>
+
+<pre class="example">
+ccfce81cab1e03a2c70b3abeb11837d86ea455fb5cfb240acd0c3ef3e1ae0cd6
+</pre>
+</div>
+</div>
+<div id="outline-container-org82d6d3f" class="outline-3">
+<h3 id="org82d6d3f">C source</h3>
+<div class="outline-text-3" id="text-org82d6d3f">
+</div>
+<div id="outline-container-org20cb785" class="outline-4">
+<h4 id="org20cb785">Headers and a Context Object</h4>
+<div class="outline-text-4" id="text-org20cb785">
+<p>
+Here we set up a struct that holds ReadStat's context information, in this case
+the number of columns in the given SAS dataset and a pointer to an <code>mco_coro</code>
+coroutine object. With the number of columns known, the ReadStat value callback
+will know when it is reading the last column.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #a0132f;">#include</span> <span style="color: #3548cf;">&lt;readstat.h&gt;</span>
+
+<span style="color: #a0132f;">#define</span> <span style="color: #005e8b;">MINICORO_IMPL</span>
+<span style="color: #a0132f;">#include</span> <span style="color: #3548cf;">"../minicoro/minicoro.h"</span>
+
+<span style="color: #531ab6;">typedef</span> <span style="color: #531ab6;">struct</span> {
+  <span style="color: #005f5f;">int</span> <span style="color: #005e8b;">col_count</span>;
+  <span style="color: #005f5f;">mco_coro</span> *<span style="color: #005e8b;">co</span>;
+} <span style="color: #005f5f;">rs_ctx</span>;
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org6ed8f1d" class="outline-4">
+<h4 id="org6ed8f1d">ReadStat Callbacks</h4>
+<div class="outline-text-4" id="text-org6ed8f1d">
+<p>
+These methods are largely adapted from ReadStat's README.
+</p>
+</div>
+<ul class="org-ul">
+<li><a id="orgcc066ea"></a>Metadata Handler<br />
+<div class="outline-text-5" id="text-orgcc066ea">
+<p>
+The metadata handler is run once after calling one of the <code>readstat_parse_*</code>
+methods, and here will set the number of columns in the context object that is
+passed to all handlers.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #005f5f;">int</span> <span style="color: #721045;">handle_metadata</span>(<span style="color: #005f5f;">readstat_metadata_t</span> *<span style="color: #005e8b;">metadata</span>, <span style="color: #005f5f;">void</span> *<span style="color: #005e8b;">ctx</span>) {
+  <span style="color: #005f5f;">rs_ctx</span> *<span style="color: #005e8b;">my_count</span> = (<span style="color: #005f5f;">rs_ctx</span> *)ctx;
+  <span style="color: #7f0000;">/* </span><span style="color: #7f0000;">`var_count` corresponds to column count</span><span style="color: #7f0000;"> */</span>
+  my_count-&gt;col_count = readstat_get_var_count(metadata);
+
+  <span style="color: #531ab6;">return</span> READSTAT_HANDLER_OK;
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org95b91b2"></a>Variable Handler<br />
+<div class="outline-text-5" id="text-org95b91b2">
+<p>
+"Variable" in ReadStat refers to a column name and is run once for each
+column. Here it prints tab-separated column names.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #005f5f;">int</span> <span style="color: #721045;">handle_variable</span>(<span style="color: #005f5f;">int</span> <span style="color: #005e8b;">index</span>, <span style="color: #005f5f;">readstat_variable_t</span> *<span style="color: #005e8b;">variable</span>,
+                          <span style="color: #531ab6;">const</span> <span style="color: #005f5f;">char</span> *<span style="color: #005e8b;">val_labels</span>, <span style="color: #005f5f;">void</span> *<span style="color: #005e8b;">ctx</span>) {
+  <span style="color: #7f0000;">/* </span><span style="color: #7f0000;">this loops through column names to print the first line</span><span style="color: #7f0000;"> */</span>
+  <span style="color: #005f5f;">rs_ctx</span> *<span style="color: #005e8b;">meta</span> = (<span style="color: #005f5f;">rs_ctx</span> *)ctx;
+  printf(<span style="color: #3548cf;">"%s"</span>, readstat_variable_get_name(variable));
+  <span style="color: #531ab6;">if</span> (index == meta-&gt;col_count - 1) {
+    printf(<span style="color: #3548cf;">"\n"</span>);
+  } <span style="color: #531ab6;">else</span> {
+    printf(<span style="color: #3548cf;">"\t"</span>);
+  }
+  <span style="color: #531ab6;">return</span> READSTAT_HANDLER_OK;
+}
+</pre>
+</div>
+</div>
+</li>
+<li><a id="org8fcfb22"></a>Value Handler<br />
+<div class="outline-text-5" id="text-org8fcfb22">
+<p>
+The value handler will run once for each value being read. Through the <code>meta</code>
+object it has access to the column count and can call <code>mco_resume</code> to pass
+control back to the coroutine.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #005f5f;">int</span> <span style="color: #721045;">handle_value</span>(<span style="color: #005f5f;">int</span> <span style="color: #005e8b;">obs_index</span>, <span style="color: #005f5f;">readstat_variable_t</span> *<span style="color: #005e8b;">variable</span>,
+                       <span style="color: #005f5f;">readstat_value_t</span> <span style="color: #005e8b;">value</span>, <span style="color: #005f5f;">void</span> *<span style="color: #005e8b;">ctx</span>) {
+   <span style="color: #7f0000;">/* </span><span style="color: #7f0000;">this loops through the rest of the rows to print values</span><span style="color: #7f0000;"> */</span>
+   <span style="color: #005f5f;">rs_ctx</span> *<span style="color: #005e8b;">meta</span> = (<span style="color: #005f5f;">rs_ctx</span> *)ctx;
+   <span style="color: #005f5f;">int</span> <span style="color: #005e8b;">var_index</span> = readstat_variable_get_index(variable);
+   <span style="color: #005f5f;">readstat_type_t</span> <span style="color: #005e8b;">type</span> = readstat_value_type(value);
+   <span style="color: #531ab6;">if</span> (<span style="color: #a60000; font-weight: bold;">!</span>readstat_value_is_system_missing(value)) {
+     <span style="color: #531ab6;">if</span> (type == READSTAT_TYPE_STRING) {
+            printf(<span style="color: #3548cf;">"%s"</span>, readstat_string_value(value));
+     } <span style="color: #531ab6;">else</span> <span style="color: #531ab6;">if</span> (type == READSTAT_TYPE_INT8) {
+            printf(<span style="color: #3548cf;">"%.2hhd"</span>, readstat_int8_value(value));
+     } <span style="color: #531ab6;">else</span> <span style="color: #531ab6;">if</span> (type == READSTAT_TYPE_INT16) {
+            printf(<span style="color: #3548cf;">"%.2hd"</span>, readstat_int16_value(value));
+     } <span style="color: #531ab6;">else</span> <span style="color: #531ab6;">if</span> (type == READSTAT_TYPE_INT32) {
+            printf(<span style="color: #3548cf;">"%.2d"</span>, readstat_int32_value(value));
+     } <span style="color: #531ab6;">else</span> <span style="color: #531ab6;">if</span> (type == READSTAT_TYPE_FLOAT) {
+            printf(<span style="color: #3548cf;">"%.2f"</span>, readstat_float_value(value));
+     } <span style="color: #531ab6;">else</span> <span style="color: #531ab6;">if</span> (type == READSTAT_TYPE_DOUBLE) {
+            printf(<span style="color: #3548cf;">"%.2lf"</span>, readstat_double_value(value));
+     }
+   }
+
+   <span style="color: #531ab6;">if</span> (var_index == meta-&gt;col_count - 1) {
+     printf(<span style="color: #3548cf;">"\n"</span>);
+     mco_resume(meta-&gt;co);
+   } <span style="color: #531ab6;">else</span> {
+     printf(<span style="color: #3548cf;">"\t"</span>);
+   }
+   <span style="color: #531ab6;">return</span> READSTAT_HANDLER_OK;
+ }
+</pre>
+</div>
+</div>
+</li>
+</ul>
+</div>
+<div id="outline-container-orgc6c34eb" class="outline-4">
+<h4 id="orgc6c34eb">Coroutine Entry Function</h4>
+<div class="outline-text-4" id="text-orgc6c34eb">
+<p>
+This basic coroutine function will initialize the running row count and suspend
+execution by calling <code>mco_yield</code>. When execution returns, it will resume from
+the first <code>mco_yield</code> and continually print a message with the rowcount and
+yielding back so the next row may be read.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #005f5f;">void</span> <span style="color: #721045;">coro_entry</span>(<span style="color: #005f5f;">mco_coro</span> *<span style="color: #005e8b;">co</span>) {
+  <span style="color: #005f5f;">int</span> <span style="color: #005e8b;">current_row_count</span> = 1;
+  <span style="color: #7f0000;">// </span><span style="color: #7f0000;">stop after initializing state</span>
+  mco_yield(co);
+
+  <span style="color: #531ab6;">while</span> (1) {
+    printf(<span style="color: #3548cf;">"finished reading row #: %d\n"</span>, current_row_count++);
+    mco_yield(co);
+  }
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-org79b2252" class="outline-4">
+<h4 id="org79b2252">Main</h4>
+<div class="outline-text-4" id="text-org79b2252">
+<p>
+A small example taking the filename of a sas7bdat file to parse and print.
+</p>
+
+<div class="org-src-container">
+<pre class="src src-c"><span style="color: #005f5f;">int</span> <span style="color: #721045;">main</span>(<span style="color: #005f5f;">int</span> <span style="color: #005e8b;">argc</span>, <span style="color: #005f5f;">char</span> *<span style="color: #005e8b;">argv</span>[]) {
+  <span style="color: #531ab6;">if</span> (argc != 2) {
+    printf(<span style="color: #3548cf;">"Usage: %s &lt;filename&gt;\n"</span>, argv[0]);
+    <span style="color: #531ab6;">return</span> 1;
+  }
+
+  <span style="color: #7f0000;">// </span><span style="color: #7f0000;">setup the coroutine object</span>
+  <span style="color: #005f5f;">mco_desc</span> <span style="color: #005e8b;">desc</span> = mco_desc_init(coro_entry, 0);
+  desc.user_data = <span style="color: #0000b0;">NULL</span>;
+  <span style="color: #005f5f;">mco_coro</span> *<span style="color: #005e8b;">co</span>;
+  <span style="color: #005f5f;">mco_result</span> <span style="color: #005e8b;">res</span> = mco_create(&amp;co, &amp;desc);
+  res = mco_resume(co);
+
+  <span style="color: #7f0000;">// </span><span style="color: #7f0000;">initialize ReadStat's context</span>
+  <span style="color: #005f5f;">rs_ctx</span> <span style="color: #005e8b;">meta</span> = {.col_count = 0, .co = co};
+  <span style="color: #005f5f;">readstat_error_t</span> <span style="color: #005e8b;">error</span> = READSTAT_OK;
+  <span style="color: #005f5f;">readstat_parser_t</span> *<span style="color: #005e8b;">parser</span> = readstat_parser_init();
+
+  <span style="color: #7f0000;">// </span><span style="color: #7f0000;">set the handlers</span>
+  readstat_set_metadata_handler(parser, &amp;handle_metadata);
+  readstat_set_variable_handler(parser, &amp;handle_variable);
+  readstat_set_value_handler(parser, &amp;handle_value);
+
+  error = readstat_parse_sas7bdat(parser, argv[1], &amp;meta);
+  res = mco_destroy(co);
+  readstat_parser_free(parser);
+
+  <span style="color: #531ab6;">if</span> (error != READSTAT_OK) {
+    printf(<span style="color: #3548cf;">"Error processing %s: %d\n"</span>, argv[1], error);
+    <span style="color: #531ab6;">return</span> 1;
+  }
+  <span style="color: #531ab6;">return</span> 0;
+}
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgeb9e2ad" class="outline-4">
+<h4 id="orgeb9e2ad">Compile</h4>
+<div class="outline-text-4" id="text-orgeb9e2ad">
+<div class="org-src-container">
+<pre class="src src-sh">gcc src/readstat_rowwise.c -o readstat_rowwise.o -g -lreadstat
+</pre>
+</div>
+</div>
+</div>
+<div id="outline-container-orgd7bb9b8" class="outline-4">
+<h4 id="orgd7bb9b8">Run</h4>
+<div class="outline-text-4" id="text-orgd7bb9b8">
+<div class="org-src-container">
+<pre class="src src-sh">./readstat_rowwise.o src/mtcars_head.sas7bdat
+</pre>
+</div>
+
+<pre class="example" id="org86e56bc">
+mpg	cyl	disp	hp	drat	wt	qsec	vs	am	gear	carb
+21.00	6.00	160.00	110.00	3.90	2.62	16.46	0.00	1.00	4.00	4.00
+finished reading row #: 1
+21.00	6.00	160.00	110.00	3.90	2.88	17.02	0.00	1.00	4.00	4.00
+finished reading row #: 2
+22.80	4.00	108.00	93.00	3.85	2.32	18.61	1.00	1.00	4.00	1.00
+finished reading row #: 3
+21.40	6.00	258.00	110.00	3.08	3.21	19.44	1.00	0.00	3.00	1.00
+finished reading row #: 4
+18.70	8.00	360.00	175.00	3.15	3.44	17.02	0.00	0.00	3.00	2.00
+finished reading row #: 5
+18.10	6.00	225.00	105.00	2.76	3.46	20.22	1.00	0.00	3.00	1.00
+finished reading row #: 6
+</pre>
+
+<p>
+This demonstrates how the coroutine makes it easy to pass execution control
+around at any point, here emulating the behavior of a row callback without
+having to modify ReadStat's internals in any way. Only a simple message is
+printed in this example, but appropriately modifying <code>coro_entry</code> should enable
+me to write a proper FDW for sas7bdat files.
+</p>
+</div>
+</div>
+</div>
+</div>
+</div></div></body></html>

@@ -39,3 +39,117 @@
                                                         (org-element-create 'link `(:path ,file  :type "file")
                                                                             (ejneer/org-file-title file))))))))
 #+end_src
+
+#+RESULTS:
+* algorithms
+:PROPERTIES:
+:CUSTOM_ID: algorithms
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/undirected-graph-traversal.org][Undirected Graph Traversal]]
+- 
+  [[file:/Users/ejneer/ejneer-website/content/quicksort.org][Quicksort]]
+- 
+  [[file:/Users/ejneer/ejneer-website/content/mergesort.org][Mergesort]]
+* C/C++
+:PROPERTIES:
+:CUSTOM_ID: C/C++
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/20240617_readstat_coroutine.org][Row-wise Callbacks for ReadStat using Coroutines]]
+- 
+  [[file:/Users/ejneer/ejneer-website/content/trying_out_cpp11_babel.org][Trying out cpp11 and org-babel]]
+* commonlisp
+:PROPERTIES:
+:CUSTOM_ID: commonlisp
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/undirected-graph-traversal.org][Undirected Graph Traversal]]
+- 
+  [[file:/Users/ejneer/ejneer-website/content/closure_networks_in_r.org][Closure Networks in R]]
+* docker
+:PROPERTIES:
+:CUSTOM_ID: docker
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/20240617_readstat_coroutine.org][Row-wise Callbacks for ReadStat using Coroutines]]
+- 
+  [[file:/Users/ejneer/ejneer-website/content/20240602_postgres_fdw_readstat.org][Postgres FDW for ReadStat / SAS]]
+* emacs
+:PROPERTIES:
+:CUSTOM_ID: emacs
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/converting_to_org_publish.org][Converting To Org Publish]]
+* graphs
+:PROPERTIES:
+:CUSTOM_ID: graphs
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/bills_of_material.org][Bills of Material]]
+- 
+  [[file:/Users/ejneer/ejneer-website/content/undirected-graph-traversal.org][Undirected Graph Traversal]]
+* manufacturing
+:PROPERTIES:
+:CUSTOM_ID: manufacturing
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/bills_of_material.org][Bills of Material]]
+* metaprogramming
+:PROPERTIES:
+:CUSTOM_ID: metaprogramming
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/20240606_r_metaprogramming.org][R Metaprogramming - Misc Patterns]]
+* orgmode
+:PROPERTIES:
+:CUSTOM_ID: orgmode
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/converting_to_org_publish.org][Converting To Org Publish]]
+- 
+  [[file:/Users/ejneer/ejneer-website/content/trying_out_cpp11_babel.org][Trying out cpp11 and org-babel]]
+* postgres
+:PROPERTIES:
+:CUSTOM_ID: postgres
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/20240602_postgres_fdw_readstat.org][Postgres FDW for ReadStat / SAS]]
+* python
+:PROPERTIES:
+:CUSTOM_ID: python
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/quicksort.org][Quicksort]]
+- 
+  [[file:/Users/ejneer/ejneer-website/content/mergesort.org][Mergesort]]
+* R
+:PROPERTIES:
+:CUSTOM_ID: R
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/20240606_r_metaprogramming.org][R Metaprogramming - Misc Patterns]]
+- 
+  [[file:/Users/ejneer/ejneer-website/content/trying_out_cpp11_babel.org][Trying out cpp11 and org-babel]]
+- 
+  [[file:/Users/ejneer/ejneer-website/content/closure_networks_in_r.org][Closure Networks in R]]
+* readstat
+:PROPERTIES:
+:CUSTOM_ID: readstat
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/20240617_readstat_coroutine.org][Row-wise Callbacks for ReadStat using Coroutines]]
+- 
+  [[file:/Users/ejneer/ejneer-website/content/20240602_postgres_fdw_readstat.org][Postgres FDW for ReadStat / SAS]]
+* rlang
+:PROPERTIES:
+:CUSTOM_ID: rlang
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/20240606_r_metaprogramming.org][R Metaprogramming - Misc Patterns]]
+* sql
+:PROPERTIES:
+:CUSTOM_ID: sql
+:END:
+- 
+  [[file:/Users/ejneer/ejneer-website/content/bills_of_material.org][Bills of Material]]
