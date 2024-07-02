@@ -6,7 +6,8 @@ functional programming. I maintain this site as a way to document my learning
 and writing in public.
 
 ** Projects
-[[file:msthesis/index.org][Master's Thesis Research]]
+[[file:msthesis/index.org][Master's Thesis Research]] - Investigation of mechanical properties of
+carbon nanotube reinforced composite laminates.
 
 ** Posts
 
