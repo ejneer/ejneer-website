@@ -3,27 +3,27 @@
 * Education
 
 #+begin_src elisp :wrap export html :exports results
-(defun education-table (institution degree date)
+  (defun education-table (institution degree date)
+    (shr-dom-to-xml
+     `(tbody ()
+       (tr ()
+           (td () ,date)
+           (td () (b () ,degree)))
+       (tr ()
+           (td () "")
+           (td () ,institution)))))
+
+  ;; (shr-dom-to-xml
+  ;;  `(ul ((class . "ul-edu"))
+  ;;    ,(mapconcat #'education-entry entries "\n")))
+
   (shr-dom-to-xml
-   `(tbody ()
-     (tr ()
-         (td () ,date)
-         (td () (b () ,degree)))
-     (tr ()
-         (td () "")
-         (td () ,institution)))))
-
-;; (shr-dom-to-xml
-;;  `(ul ((class . "ul-edu"))
-;;    ,(mapconcat #'education-entry entries "\n")))
-
-(shr-dom-to-xml
- `(table ()
-   ,(mapconcat (lambda (x) (apply #'education-table x))
-               '(("University of California, Irvine" "Data Science Certification" "2017")
-                 ("California State University, Long Beach" "MS Aerospace Engineering" "2015")
-                 ("California State Polytechnic University, Pomona" "BS Aerospace Engineering" "2012"))
-               "\n")))
+   `(table ()
+     ,(mapconcat (lambda (x) (apply #'education-table x))
+                 '(("California State University, Long Beach" "MS Aerospace Engineering" "2015")
+                   ("California State Polytechnic University, Pomona" "BS Aerospace Engineering" "2012")
+  		 ("University of California, Irvine" "Data Science Certification" "2017"))
+                 "\n")))
 #+end_src
 
 * Prior Experience
